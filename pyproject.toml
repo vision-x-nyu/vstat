@@ -1,88 +1,221 @@
+[tool.black]
+line-length = 240
+
 [build-system]
-requires = ["setuptools>=40.8.0", "wheel"]
+requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lmm_eval"
-version = "0.4.0"
+name = "lmms_eval"
+version = "0.7.1"
 authors = [
-    {name="EleutherAI", email="contact@eleuther.ai"}
+    { name = "LMMMs-Lab Evaluation Team", email = "lmms-lab@outlook.com" },
 ]
-description = "A framework for evaluating language models"
+description = "A framework for evaluating large multi-modality language models"
 readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
     "Programming Language :: Python :: 3",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
-requires-python = ">=3.8"
-license = { "text" = "MIT" }
+requires-python = ">=3.10"
 dependencies = [
-    "accelerate>=0.21.0",
-    "evaluate",
-    "datasets>=2.0.0",
+    "accelerate>=0.29.1",
+    "black>=24.1.0",
+    "isort>=5.13.2",
+    "datasets>=2.19.0",
     "evaluate>=0.4.0",
+    "httpx>=0.23.3",
     "jsonlines",
+    "aiohttp",
     "numexpr",
+    "numpy>=1.26.4",
     "peft>=0.2.0",
     "pybind11>=2.6.2",
     "pytablewriter",
-    "rouge-score>=0.0.4",
     "sacrebleu>=1.5.0",
     "scikit-learn>=0.24.1",
-    "sqlitedict",
-    "torch>=1.8",
+    "torch>=2.1.0", # to enable sdpa mode for running 34B model on one 80GB GPU
+    "torchvision>=0.16.0",
+    "timm",
+    "einops",
+    "ftfy",
+    "openai",
+    "opencv-python-headless",
+    "av<16.0.0",
+    "hf_transfer",
+    "nltk",
+    "sentencepiece",
+    "yt-dlp",
+    "pycocoevalcap",
     "tqdm-multiprocess",
-    "transformers>=4.35.3",
+    "transformers>=4.39.2",
+    "transformers-stream-generator",
     "zstandard",
+    "pillow",
+    "pyyaml",
+    "sympy",
+    "latex2sympy2",
+    "mpmath",
+    "Jinja2",
+    "openpyxl",
+    "loguru",
+    "hf_transfer",
+    "tenacity>=8.3.0",
+    "wandb==0.25.0",
+    "tiktoken",
+    "pre-commit",
+    "pydantic",
+    "packaging",
+    "zss",
+    "protobuf",
+    "sentence_transformers",
+    "python-dotenv",
+    "qwen-vl-utils>=0.0.14",
+    "math-verify",
 ]
-
-[tool.setuptools.packages.find]
-include = ["lmm_eval*"]
-
-# required to include yaml files in pip installation
-[tool.setuptools.package-data]
-lmm_eval = ["**/*.yaml", "tasks/**/*"]
-
-[project.scripts]
-lmm-eval = "lmm_eval.__main__:cli_evaluate"
-lmm_eval = "lmm_eval.__main__:cli_evaluate"
-
-[project.urls]
-Homepage = "https://github.com/EleutherAI/lmm-evaluation-harness"
-Repository = "https://github.com/EleutherAI/lmm-evaluation-harness"
 
 [project.optional-dependencies]
-dev = ["black", "flake8", "pre-commit", "pytest", "pytest-cov"]
-linting = [
-    "flake8",
-    "pylint",
-    "mypy",
-    "pre-commit",
+core = [
+    "lmms_eval[server]",
+    "lmms_eval[audio]",
+    "lmms_eval[metrics]",
 ]
-testing = ["pytest", "pytest-cov", "pytest-xdist"]
-multilingual = ["nagisa>=0.2.7", "jieba>=0.42.1", "pycountry"]
-math = ["sympy>=1.12", "antlr4-python3-runtime==4.11"]
-sentencepiece = ["sentencepiece>=0.1.98", "protobuf>=4.22.1"]
-promptsource = [
-    "promptsource @ git+https://github.com/bigscience-workshop/promptsource.git#egg=promptsource"
+server = [
+    "fastapi",
+    "uvicorn",
 ]
-gptq = ["auto-gptq[triton] @ git+https://github.com/PanQiWei/AutoGPTQ"]
-anthropic = ["anthropic"]
-openai = ["openai==1.3.9", "tiktoken"]
-vllm = ["vllm"]
-ifeval = ["langdetect", "immutabledict"]
+mcp = [
+    "mcp[cli]>=1.20.0",
+]
+audio = [
+    "more-itertools",
+    "editdistance",
+    "zhconv",
+    "librosa",
+    "soundfile"
+]
+metrics = [
+    "pywsd",
+    "spacy",
+    "anls",
+    "rouge",
+    "capture_metric",
+    "Levenshtein",
+]
+gemini = [
+    "google-generativeai",
+]
+reka = [
+    "httpx>=0.23.3",
+    "reka-api",
+]
+qwen = [
+    "decord",
+    "qwen_vl_utils",
+]
+mmsearch = [
+    "playwright",
+    "requests",
+    "matplotlib",
+    "duckduckgo_search",
+    "langchain",
+    "langchain-community",
+    "beautifulsoup4",
+    "FlagEmbedding",
+    "rouge",
+]
+prismmbench = [
+    "pdf2image>=1.17.0",
+    "pdfplumber>=0.11.9"
+]
+tui = [
+    "fastapi>=0.100.0",
+    "uvicorn>=0.20.0",
+]
+video = [
+    "decord; platform_system != 'Darwin'",
+    "eva-decord; platform_system == 'Darwin' and python_version < '3.12'",
+]
 all = [
-    "lmm_eval[dev]",
-    "lmm_eval[testing]",
-    "lmm_eval[linting]",
-    "lmm_eval[multilingual]",
-    "lmm_eval[sentencepiece]",
-    "lmm_eval[promptsource]",
-    "lmm_eval[gptq]",
-    "lmm_eval[anthropic]",
-    "lmm_eval[openai]",
-    "lmm_eval[vllm]",
-    "lmm_eval[ifeval]",
+    "lmms_eval[core]",
+    "lmms_eval[mcp]",
+    "lmms_eval[gemini]",
+    "lmms_eval[reka]",
+    "lmms_eval[qwen]",
+    "lmms_eval[mmsearch]",
+    "lmms_eval[tui]",
+    "lmms_eval[video]",
+]
+
+[tool.setuptools.package-data]
+"lmms_eval" = ["**/*.yaml", "**/*.yml", "**/*.json", "**/*.txt"]
+"lmms_eval.tui.web.dist" = ["**/*"]
+"lmms_eval.tui.web.dist.assets" = ["**/*"]
+
+[tool.setuptools.packages.find]
+include = ["lmms_eval*"]
+exclude = [
+    "assets*",
+    "benchmark*",
+    "docs",
+    "dist*",
+    "playground*",
+    "scripts*",
+    "tests*",
+    "checkpoints*",
+    "project_checkpoints*",
+    "debug_checkpoints*",
+    "mlx_configs*",
+    "wandb*",
+    "notebooks*",
+    "logs*",
+]
+
+[tool.wheel]
+exclude = [
+    "assets*",
+    "benchmark*",
+    "docs",
+    "dist*",
+    "playground*",
+    "scripts*",
+    "tests*",
+    "checkpoints*",
+    "project_checkpoints*",
+    "debug_checkpoints*",
+    "mlx_configs*",
+    "wandb*",
+    "notebooks*",
+    "logs*",
+]
+
+[project.scripts]
+lmms-eval = "lmms_eval.cli.dispatch:main"
+lmms-eval-mcp = "lmms_eval.mcp:main"
+lmms-eval-ui = "lmms_eval.tui.cli:main"
+
+[project.urls]
+Homepage = "https://lmms-lab.github.io"
+Repository = "https://github.com/EvolvingLMMs-Lab/lmms-eval"
+
+[dependency-groups]
+dev = [
+    "textual>=7.2.0",
+    "textual-dev>=1.8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["test"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+markers = [
+    "gpu: requires GPU hardware (deselect with '-m not gpu')",
+    "api: requires external API keys (deselect with '-m not api')",
+    "slow: slow integration tests (deselect with '-m not slow')",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning",
 ]
