@@ -1,9 +1,10 @@
 MODEL="Qwen/Qwen3-VL-8B-Instruct"
-TASK_NAME="longvid-reasoning-eval"
-OUTPUT_DIR="/nas2/longvideo_eval/results/qwen3vl_8b"
+TASK_NAME="longvid-reasoning-eval_5min"
+OUTPUT_DIR="/nas2/longvideo_eval/longvid-reasoning-eval/results/qwen3vl_8b/longvid_reasoning_eval_5min"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
-BATCH_SIZE=40
+BATCH_SIZE=1
+LIMIT=1
 MIN_PIXELS=784
 MAX_PIXELS=50176
 
@@ -29,5 +30,5 @@ $PYTHON -m accelerate.commands.launch --num_processes=${NUM_PROCESSES} -m lmms_e
     --tasks ${TASK_NAME} \
     --batch_size ${BATCH_SIZE} \
     --log_samples \
-    --log_samples_suffix qwen3_8b_7b \
+    --log_samples_suffix qwen3_8b_5min_debug \
     --output_path ${OUTPUT_DIR}

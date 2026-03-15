@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_5min_ring_toss_counting_physics
+process_docs: !function utils.process_ring_toss_counting_physics_docs
+include: _default_template_yaml
