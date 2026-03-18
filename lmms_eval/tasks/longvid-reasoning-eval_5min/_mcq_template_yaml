@@ -1,8 +1,8 @@
 dataset_path: json
 dataset_kwargs:
   data_files:
-    test: /nas2/longvideo_eval/blender/data/2min/merged_qa.json
-task: longvid-reasoning-eval_2min
+    test: /nas2/longvideo_eval/blender/data/5min/merged_qa.json
+task: longvid-reasoning-eval_5min
 test_split: test
 output_type: generate_until
 doc_to_visual: !function utils.doc_to_visual
@@ -10,8 +10,8 @@ doc_to_text: !function utils.doc_to_text
 doc_to_target: !function utils.doc_to_target
 process_results: !function utils.process_results
 metric_list:
-  - metric: "MRA:.5:.95:.05"
-    aggregation: !function utils.aggregate_mra
+  - metric: accuracy
+    aggregation: !function utils.aggregate_accuracy
     higher_is_better: true
 generation_kwargs:
   max_new_tokens: 64

@@ -1,0 +1,845 @@
+{
+  "results": {
+    "longvid-reasoning-eval_1min": {
+      " ": " ",
+      "alias": "longvid-reasoning-eval_1min"
+    },
+    "longvid-reasoning-eval_1min_block_counting": {
+      "alias": " - longvid-reasoning-eval_1min_block_counting",
+      "MRA:.5:.95:.05,none": 0.034,
+      "MRA:.5:.95:.05_stderr,none": "N/A",
+      "MRA:.5:.95:.05_stderr_clt,none": 0.009306569985658474,
+      "MRA:.5:.95:.05_stderr_clustered,none": "N/A"
+    },
+    "longvid-reasoning-eval_1min_hidden_dice_roll": {
+      "alias": " - longvid-reasoning-eval_1min_hidden_dice_roll",
+      "MRA:.5:.95:.05,none": 0.022000000000000002,
+      "MRA:.5:.95:.05_stderr,none": "N/A",
+      "MRA:.5:.95:.05_stderr_clt,none": 0.011531677754634609,
+      "MRA:.5:.95:.05_stderr_clustered,none": "N/A"
+    },
+    "longvid-reasoning-eval_1min_make_coffee": {
+      "alias": " - longvid-reasoning-eval_1min_make_coffee",
+      "MRA:.5:.95:.05,none": 0.298,
+      "MRA:.5:.95:.05_stderr,none": "N/A",
+      "MRA:.5:.95:.05_stderr_clt,none": 0.0534896518697108,
+      "MRA:.5:.95:.05_stderr_clustered,none": "N/A"
+    },
+    "longvid-reasoning-eval_1min_memory_sliding_puzzle": {
+      "alias": " - longvid-reasoning-eval_1min_memory_sliding_puzzle",
+      "accuracy,none": 0.36,
+      "accuracy_stderr,none": "N/A",
+      "accuracy_stderr_clt,none": 0.06857142857142856,
+      "accuracy_stderr_clustered,none": "N/A"
+    },
+    "longvid-reasoning-eval_1min_rhythm_game": {
+      "alias": " - longvid-reasoning-eval_1min_rhythm_game",
+      "MRA:.5:.95:.05,none": 0.0,
+      "MRA:.5:.95:.05_stderr,none": "N/A",
+      "MRA:.5:.95:.05_stderr_clt,none": 0.0,
+      "MRA:.5:.95:.05_stderr_clustered,none": "N/A"
+    },
+    "longvid-reasoning-eval_1min_ring_toss_counting_physics": {
+      "alias": " - longvid-reasoning-eval_1min_ring_toss_counting_physics",
+      "MRA:.5:.95:.05,none": 0.0,
+      "MRA:.5:.95:.05_stderr,none": "N/A",
+      "MRA:.5:.95:.05_stderr_clt,none": 0.0,
+      "MRA:.5:.95:.05_stderr_clustered,none": "N/A"
+    },
+    "longvid-reasoning-eval_1min_shell_game_rotate": {
+      "alias": " - longvid-reasoning-eval_1min_shell_game_rotate",
+      "accuracy,none": 0.42,
+      "accuracy_stderr,none": "N/A",
+      "accuracy_stderr_clt,none": 0.07050835816716038,
+      "accuracy_stderr_clustered,none": "N/A"
+    },
+    "longvid-reasoning-eval_1min_tighten_untighten": {
+      "alias": " - longvid-reasoning-eval_1min_tighten_untighten",
+      "MRA:.5:.95:.05,none": 0.004,
+      "MRA:.5:.95:.05_stderr,none": "N/A",
+      "MRA:.5:.95:.05_stderr_clt,none": 0.0027994168488950605,
+      "MRA:.5:.95:.05_stderr_clustered,none": "N/A"
+    },
+    "longvid-reasoning-eval_1min_tilt_box": {
+      "alias": " - longvid-reasoning-eval_1min_tilt_box",
+      "MRA:.5:.95:.05,none": 0.348,
+      "MRA:.5:.95:.05_stderr,none": "N/A",
+      "MRA:.5:.95:.05_stderr_clt,none": 0.05665794250570339,
+      "MRA:.5:.95:.05_stderr_clustered,none": "N/A"
+    }
+  },
+  "group_subtasks": {
+    "longvid-reasoning-eval_1min": [
+      "longvid-reasoning-eval_1min_block_counting",
+      "longvid-reasoning-eval_1min_make_coffee",
+      "longvid-reasoning-eval_1min_ring_toss_counting_physics",
+      "longvid-reasoning-eval_1min_tighten_untighten",
+      "longvid-reasoning-eval_1min_hidden_dice_roll",
+      "longvid-reasoning-eval_1min_rhythm_game",
+      "longvid-reasoning-eval_1min_shell_game_rotate",
+      "longvid-reasoning-eval_1min_memory_sliding_puzzle",
+      "longvid-reasoning-eval_1min_tilt_box"
+    ]
+  },
+  "configs": {
+    "longvid-reasoning-eval_1min_block_counting": {
+      "task": "longvid-reasoning-eval_1min_block_counting",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_block_counting_docs at 0x7fa21e9a2560>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "MRA:.5:.95:.05",
+          "aggregation": "<function aggregate_mra at 0x7fa651039a60>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    },
+    "longvid-reasoning-eval_1min_hidden_dice_roll": {
+      "task": "longvid-reasoning-eval_1min_hidden_dice_roll",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_hidden_dice_roll_docs at 0x7fa21e989d20>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "MRA:.5:.95:.05",
+          "aggregation": "<function aggregate_mra at 0x7fa651039a60>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    },
+    "longvid-reasoning-eval_1min_make_coffee": {
+      "task": "longvid-reasoning-eval_1min_make_coffee",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_make_coffee_docs at 0x7fa21e9d6400>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "MRA:.5:.95:.05",
+          "aggregation": "<function aggregate_mra at 0x7fa651039a60>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    },
+    "longvid-reasoning-eval_1min_memory_sliding_puzzle": {
+      "task": "longvid-reasoning-eval_1min_memory_sliding_puzzle",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_memory_sliding_puzzle_docs at 0x7fa228de16f0>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "accuracy",
+          "aggregation": "<function aggregate_accuracy at 0x7fa6510392d0>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    },
+    "longvid-reasoning-eval_1min_rhythm_game": {
+      "task": "longvid-reasoning-eval_1min_rhythm_game",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_rhythm_game_docs at 0x7fa21e9cdbc0>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "MRA:.5:.95:.05",
+          "aggregation": "<function aggregate_mra at 0x7fa651039a60>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    },
+    "longvid-reasoning-eval_1min_ring_toss_counting_physics": {
+      "task": "longvid-reasoning-eval_1min_ring_toss_counting_physics",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_ring_toss_counting_physics_docs at 0x7fa21e9c6140>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "MRA:.5:.95:.05",
+          "aggregation": "<function aggregate_mra at 0x7fa651039a60>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    },
+    "longvid-reasoning-eval_1min_shell_game_rotate": {
+      "task": "longvid-reasoning-eval_1min_shell_game_rotate",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_shell_game_rotate_docs at 0x7fa21e9b5900>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "accuracy",
+          "aggregation": "<function aggregate_accuracy at 0x7fa6510392d0>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    },
+    "longvid-reasoning-eval_1min_tighten_untighten": {
+      "task": "longvid-reasoning-eval_1min_tighten_untighten",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_tighten_untighten_docs at 0x7fa21e9fd850>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "MRA:.5:.95:.05",
+          "aggregation": "<function aggregate_mra at 0x7fa651039a60>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    },
+    "longvid-reasoning-eval_1min_tilt_box": {
+      "task": "longvid-reasoning-eval_1min_tilt_box",
+      "dataset_path": "json",
+      "dataset_kwargs": {
+        "data_files": {
+          "test": "/nas2/longvideo_eval/blender/data/1min/merged_qa.json"
+        }
+      },
+      "test_split": "test",
+      "full_docs": false,
+      "process_results_use_image": false,
+      "process_docs": "<function process_tilt_box_docs at 0x7fa6a1042820>",
+      "doc_to_visual": "<function doc_to_visual at 0x7fa651039e80>",
+      "doc_to_text": "<function doc_to_text at 0x7fa651039c70>",
+      "doc_to_target": "<function doc_to_target at 0x7fa651039b10>",
+      "process_results": "<function process_results at 0x7fa6510394e0>",
+      "description": "",
+      "target_delimiter": " ",
+      "fewshot_delimiter": "\n\n",
+      "num_fewshot": 0,
+      "metric_list": [
+        {
+          "metric": "MRA:.5:.95:.05",
+          "aggregation": "<function aggregate_mra at 0x7fa651039a60>",
+          "higher_is_better": true
+        }
+      ],
+      "output_type": "generate_until",
+      "generation_kwargs": {
+        "max_new_tokens": 64,
+        "temperature": 0.0,
+        "do_sample": false,
+        "until": [
+          "\n\n"
+        ]
+      },
+      "repeats": 1,
+      "should_decontaminate": false,
+      "score_key": "score",
+      "metadata": {
+        "version": 0.0
+      },
+      "lmms_eval_specific_kwargs": {
+        "default": {
+          "pre_prompt": "",
+          "post_prompt": ""
+        },
+        "pre_prompt": "",
+        "post_prompt": ""
+      }
+    }
+  },
+  "versions": {
+    "longvid-reasoning-eval_1min_block_counting": 0.0,
+    "longvid-reasoning-eval_1min_hidden_dice_roll": 0.0,
+    "longvid-reasoning-eval_1min_make_coffee": 0.0,
+    "longvid-reasoning-eval_1min_memory_sliding_puzzle": 0.0,
+    "longvid-reasoning-eval_1min_rhythm_game": 0.0,
+    "longvid-reasoning-eval_1min_ring_toss_counting_physics": 0.0,
+    "longvid-reasoning-eval_1min_shell_game_rotate": 0.0,
+    "longvid-reasoning-eval_1min_tighten_untighten": 0.0,
+    "longvid-reasoning-eval_1min_tilt_box": 0.0
+  },
+  "n-shot": {
+    "longvid-reasoning-eval_1min_block_counting": 0,
+    "longvid-reasoning-eval_1min_hidden_dice_roll": 0,
+    "longvid-reasoning-eval_1min_make_coffee": 0,
+    "longvid-reasoning-eval_1min_memory_sliding_puzzle": 0,
+    "longvid-reasoning-eval_1min_rhythm_game": 0,
+    "longvid-reasoning-eval_1min_ring_toss_counting_physics": 0,
+    "longvid-reasoning-eval_1min_shell_game_rotate": 0,
+    "longvid-reasoning-eval_1min_tighten_untighten": 0,
+    "longvid-reasoning-eval_1min_tilt_box": 0
+  },
+  "higher_is_better": {
+    "longvid-reasoning-eval_1min": {
+      "MRA:.5:.95:.05": true,
+      "accuracy": true
+    },
+    "longvid-reasoning-eval_1min_block_counting": {
+      "MRA:.5:.95:.05": true
+    },
+    "longvid-reasoning-eval_1min_hidden_dice_roll": {
+      "MRA:.5:.95:.05": true
+    },
+    "longvid-reasoning-eval_1min_make_coffee": {
+      "MRA:.5:.95:.05": true
+    },
+    "longvid-reasoning-eval_1min_memory_sliding_puzzle": {
+      "accuracy": true
+    },
+    "longvid-reasoning-eval_1min_rhythm_game": {
+      "MRA:.5:.95:.05": true
+    },
+    "longvid-reasoning-eval_1min_ring_toss_counting_physics": {
+      "MRA:.5:.95:.05": true
+    },
+    "longvid-reasoning-eval_1min_shell_game_rotate": {
+      "accuracy": true
+    },
+    "longvid-reasoning-eval_1min_tighten_untighten": {
+      "MRA:.5:.95:.05": true
+    },
+    "longvid-reasoning-eval_1min_tilt_box": {
+      "MRA:.5:.95:.05": true
+    }
+  },
+  "n-samples": {
+    "longvid-reasoning-eval_1min_block_counting": {
+      "original": 50,
+      "effective": 50
+    },
+    "longvid-reasoning-eval_1min_make_coffee": {
+      "original": 50,
+      "effective": 50
+    },
+    "longvid-reasoning-eval_1min_ring_toss_counting_physics": {
+      "original": 49,
+      "effective": 49
+    },
+    "longvid-reasoning-eval_1min_tighten_untighten": {
+      "original": 50,
+      "effective": 50
+    },
+    "longvid-reasoning-eval_1min_hidden_dice_roll": {
+      "original": 50,
+      "effective": 50
+    },
+    "longvid-reasoning-eval_1min_rhythm_game": {
+      "original": 50,
+      "effective": 50
+    },
+    "longvid-reasoning-eval_1min_shell_game_rotate": {
+      "original": 50,
+      "effective": 50
+    },
+    "longvid-reasoning-eval_1min_memory_sliding_puzzle": {
+      "original": 50,
+      "effective": 50
+    },
+    "longvid-reasoning-eval_1min_tilt_box": {
+      "original": 50,
+      "effective": 50
+    }
+  },
+  "config": {
+    "model": "qwen3_vl",
+    "model_args": "pretrained=Qwen/Qwen3-VL-8B-Instruct,min_pixels=784,max_pixels=50176,device_map=auto",
+    "batch_size": "1",
+    "batch_sizes": [],
+    "device": null,
+    "use_cache": null,
+    "limit": null,
+    "offset": 0,
+    "bootstrap_iters": 100000,
+    "gen_kwargs": "",
+    "random_seed": 0,
+    "numpy_seed": 1234,
+    "torch_seed": 1234,
+    "fewshot_seed": 1234,
+    "resolved_cli_args": {
+      "config": "",
+      "model": "qwen3_vl",
+      "tasks": "longvid-reasoning-eval_1min",
+      "model_args": "pretrained=Qwen/Qwen3-VL-8B-Instruct,min_pixels=784,max_pixels=50176,device_map=auto",
+      "launcher_args": null,
+      "num_fewshot": null,
+      "batch_size": "1",
+      "max_batch_size": null,
+      "device": null,
+      "output_path": "/nas2/longvideo_eval/longvid-reasoning-eval/results/qwen3vl_8b/longvid_reasoning_eval_1min",
+      "limit": null,
+      "offset": 0,
+      "use_cache": null,
+      "cache_requests": null,
+      "check_integrity": false,
+      "write_out": false,
+      "log_samples": true,
+      "wandb_log_samples": false,
+      "log_samples_suffix": "qwen3_8b_1min",
+      "system_instruction": null,
+      "apply_chat_template": false,
+      "fewshot_as_multiturn": false,
+      "show_config": false,
+      "include_path": null,
+      "gen_kwargs": "",
+      "reasoning_tags": "[[\"<think>\", \"</think>\"], [\"<analysis>\", \"</analysis>\"]]",
+      "verbosity": "INFO",
+      "wandb_args": "",
+      "timezone": "Asia/Singapore",
+      "hf_hub_log_args": ",output_path=/nas2/longvideo_eval/longvid-reasoning-eval/results/qwen3vl_8b/longvid_reasoning_eval_1min",
+      "predict_only": false,
+      "seed": [
+        0,
+        1234,
+        1234,
+        1234
+      ],
+      "trust_remote_code": false,
+      "process_with_media": false,
+      "agentic_trace_mode": "basic",
+      "force_simple": false,
+      "tui": false,
+      "repeats": 1,
+      "baseline": null,
+      "max_tokens": null,
+      "power_analysis": false,
+      "effect_size": 0.03,
+      "alpha": 0.05,
+      "power": 0.8,
+      "correlation": 0.5,
+      "std_a": null,
+      "std_b": null
+    }
+  },
+  "git_hash": "8217bff1",
+  "git_branch": "main",
+  "lmms_eval_version": "main@8217bff1",
+  "date": "20260319_030715",
+  "throughput": {
+    "total_gen_tokens": 193,
+    "total_elapsed_time": 17.76796269416809,
+    "avg_speed": 10.862247029781734,
+    "avg_rank": 0.0
+  },
+  "usage": {},
+  "efficiency": {
+    "by_task": {
+      "longvid-reasoning-eval_1min_block_counting": {
+        "docs": 50.0,
+        "docs_with_token_counts": 50.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 102.0,
+        "total_tokens": 102.0,
+        "total_correct_score": 0.0,
+        "avg_output_tokens_per_sample": 2.04,
+        "tokens_per_correct_answer": null
+      },
+      "longvid-reasoning-eval_1min_make_coffee": {
+        "docs": 50.0,
+        "docs_with_token_counts": 50.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 100.0,
+        "total_tokens": 100.0,
+        "total_correct_score": 0.0,
+        "avg_output_tokens_per_sample": 2.0,
+        "tokens_per_correct_answer": null
+      },
+      "longvid-reasoning-eval_1min_ring_toss_counting_physics": {
+        "docs": 49.0,
+        "docs_with_token_counts": 49.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 98.0,
+        "total_tokens": 98.0,
+        "total_correct_score": 0.0,
+        "avg_output_tokens_per_sample": 2.0,
+        "tokens_per_correct_answer": null
+      },
+      "longvid-reasoning-eval_1min_tighten_untighten": {
+        "docs": 50.0,
+        "docs_with_token_counts": 50.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 137.0,
+        "total_tokens": 137.0,
+        "total_correct_score": 0.0,
+        "avg_output_tokens_per_sample": 2.74,
+        "tokens_per_correct_answer": null
+      },
+      "longvid-reasoning-eval_1min_hidden_dice_roll": {
+        "docs": 50.0,
+        "docs_with_token_counts": 50.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 100.0,
+        "total_tokens": 100.0,
+        "total_correct_score": 0.0,
+        "avg_output_tokens_per_sample": 2.0,
+        "tokens_per_correct_answer": null
+      },
+      "longvid-reasoning-eval_1min_rhythm_game": {
+        "docs": 50.0,
+        "docs_with_token_counts": 50.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 100.0,
+        "total_tokens": 100.0,
+        "total_correct_score": 0.0,
+        "avg_output_tokens_per_sample": 2.0,
+        "tokens_per_correct_answer": null
+      },
+      "longvid-reasoning-eval_1min_shell_game_rotate": {
+        "docs": 50.0,
+        "docs_with_token_counts": 50.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 200.0,
+        "total_tokens": 200.0,
+        "total_correct_score": 21.0,
+        "avg_output_tokens_per_sample": 4.0,
+        "tokens_per_correct_answer": 9.523809523809524
+      },
+      "longvid-reasoning-eval_1min_memory_sliding_puzzle": {
+        "docs": 50.0,
+        "docs_with_token_counts": 50.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 444.0,
+        "total_tokens": 444.0,
+        "total_correct_score": 18.0,
+        "avg_output_tokens_per_sample": 8.88,
+        "tokens_per_correct_answer": 24.666666666666668
+      },
+      "longvid-reasoning-eval_1min_tilt_box": {
+        "docs": 50.0,
+        "docs_with_token_counts": 50.0,
+        "total_input_tokens": 0.0,
+        "total_output_tokens": 100.0,
+        "total_tokens": 100.0,
+        "total_correct_score": 0.0,
+        "avg_output_tokens_per_sample": 2.0,
+        "tokens_per_correct_answer": null
+      }
+    },
+    "overall": {
+      "docs": 449.0,
+      "docs_with_token_counts": 449.0,
+      "total_input_tokens": 0.0,
+      "total_output_tokens": 1381.0,
+      "total_tokens": 1381.0,
+      "total_correct_score": 39.0,
+      "avg_output_tokens_per_sample": 3.0757238307349666,
+      "tokens_per_correct_answer": 35.41025641025641
+    }
+  },
+  "task_hashes": {
+    "longvid-reasoning-eval_1min_block_counting": "972b634c01cb0602eba513489b5262184a1745cf22d02f1e1a1ebc04aaf3d148",
+    "longvid-reasoning-eval_1min_make_coffee": "972b634c01cb0602eba513489b5262184a1745cf22d02f1e1a1ebc04aaf3d148",
+    "longvid-reasoning-eval_1min_ring_toss_counting_physics": "ac4f08f9e7d292744045d4179c9b8282229eda871d495b2588bbf59bf57fa627",
+    "longvid-reasoning-eval_1min_tighten_untighten": "972b634c01cb0602eba513489b5262184a1745cf22d02f1e1a1ebc04aaf3d148",
+    "longvid-reasoning-eval_1min_hidden_dice_roll": "972b634c01cb0602eba513489b5262184a1745cf22d02f1e1a1ebc04aaf3d148",
+    "longvid-reasoning-eval_1min_rhythm_game": "972b634c01cb0602eba513489b5262184a1745cf22d02f1e1a1ebc04aaf3d148",
+    "longvid-reasoning-eval_1min_shell_game_rotate": "972b634c01cb0602eba513489b5262184a1745cf22d02f1e1a1ebc04aaf3d148",
+    "longvid-reasoning-eval_1min_memory_sliding_puzzle": "972b634c01cb0602eba513489b5262184a1745cf22d02f1e1a1ebc04aaf3d148",
+    "longvid-reasoning-eval_1min_tilt_box": "972b634c01cb0602eba513489b5262184a1745cf22d02f1e1a1ebc04aaf3d148"
+  },
+  "model_source": "qwen3_vl",
+  "model_name": "Qwen/Qwen3-VL-8B-Instruct",
+  "model_name_sanitized": "Qwen__Qwen3-VL-8B-Instruct",
+  "system_instruction": null,
+  "system_instruction_sha": null,
+  "fewshot_as_multiturn": false,
+  "chat_template": null,
+  "chat_template_sha": null,
+  "start_time": 2332253.948782575,
+  "end_time": 2332304.959126334,
+  "total_evaluation_time_seconds": "51.010343759320676"
+}
