@@ -1,3 +1,0 @@
-include: _default_template_yaml
-task: hipho_apho_2025
-test_split: APhO_2025

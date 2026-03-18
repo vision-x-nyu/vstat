@@ -1,3 +1,0 @@
-include: _default_template_yaml
-task: hipho_panmechanics_2025
-test_split: PanMechanics_2025

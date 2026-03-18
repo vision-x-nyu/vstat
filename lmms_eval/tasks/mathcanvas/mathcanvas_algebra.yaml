@@ -1,3 +1,0 @@
-include: _default_template_yaml
-task: mathcanvas_algebra
-dataset_name: Algebra

@@ -1,3 +1,0 @@
-task: "saco_gold_crowded"
-test_split: crowded
-include: _default_template_saco_gold_yaml

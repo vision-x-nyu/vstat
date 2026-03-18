@@ -1,4 +1,0 @@
-dataset_name: null
-test_split: test
-task: "erqa"
-include: _default_template_yaml

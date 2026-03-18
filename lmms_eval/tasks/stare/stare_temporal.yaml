@@ -1,4 +1,0 @@
-dataset_name: temporal
-test_split: test
-task: "stare_temporal"
-include: _default_template_yaml

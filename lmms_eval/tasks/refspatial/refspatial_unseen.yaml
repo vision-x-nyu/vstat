@@ -1,4 +1,0 @@
-test_split: unseen
-tag: "refspatial_groups"
-task: "refspatial_unseen"
-include: _default_template_yaml

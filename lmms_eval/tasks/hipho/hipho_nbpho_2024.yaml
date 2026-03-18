@@ -1,3 +1,0 @@
-include: _default_template_yaml
-task: hipho_nbpho_2024
-test_split: NBPhO_2024

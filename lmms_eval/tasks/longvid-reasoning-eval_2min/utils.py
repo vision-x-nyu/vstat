@@ -1,7 +1,7 @@
-"""Task helpers for longvid-reasoning-eval_5min.
+"""Task helpers for longvid-reasoning-eval_2min.
 
 Brief description:
-Load the nested 5min Blender QA JSON into lmms_eval subtasks and score
+Load the nested 2min Blender QA JSON into lmms_eval subtasks and score
 exact-match accuracy. MCQ tasks compare predicted letter; free-form tasks
 parse integers or structured answers.
 
@@ -9,8 +9,8 @@ Usage:
 Referenced by the YAML task configs in this directory via `!function`.
 
 Input spec:
-`/nas2/longvideo_eval/blender/data/5min/merged_qa.json` with
-`data -> 5min -> <task_name> -> list[example]`.
+`/nas2/longvideo_eval/blender/data/2min/merged_qa.json` with
+`data -> 2min -> <task_name> -> list[example]`.
 
 Output spec:
 Each subtask exposes flat documents with `video_path`, `question`,
@@ -22,7 +22,7 @@ import re
 
 from datasets import Dataset
 
-BENCH_KEY = "5min"
+BENCH_KEY = "2min"
 
 ROW_COLUMN_PATTERN = re.compile(r"row\s*(\d+)\s*[,;/]?\s*column\s*(\d+)", re.IGNORECASE)
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
@@ -94,9 +94,6 @@ def _build_task_dataset(dataset, source_task):
 
 def process_block_counting_docs(dataset):
     return _build_task_dataset(dataset, "block_counting")
-
-def process_ring_toss_counting_physics_docs(dataset):
-    return _build_task_dataset(dataset, "ring_toss_counting_physics")
 
 def process_hidden_dice_roll_docs(dataset):
     return _build_task_dataset(dataset, "hidden_dice_roll")

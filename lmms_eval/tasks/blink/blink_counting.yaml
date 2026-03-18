@@ -1,4 +1,0 @@
-dataset_name: "Counting"
-tag: "blink_groups"
-task: "blink_counting"
-include: _default_template_yaml

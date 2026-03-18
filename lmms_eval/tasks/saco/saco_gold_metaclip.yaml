@@ -1,3 +1,0 @@
-task: "saco_gold_metaclip"
-test_split: metaclip
-include: _default_template_saco_gold_yaml

@@ -1,3 +1,0 @@
-include: _default_template_yaml
-task: hipho_f_ma_2024
-test_split: F_MA_2024

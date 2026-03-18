@@ -1,1 +1,0 @@
-# MindCube Source Package

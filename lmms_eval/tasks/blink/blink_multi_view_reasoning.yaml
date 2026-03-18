@@ -1,4 +1,0 @@
-dataset_name: "Multi-view_Reasoning"
-tag: "blink_groups"
-task: "blink_multi_view_reasoning"
-include: _default_template_yaml

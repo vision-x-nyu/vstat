@@ -1,4 +1,0 @@
-task: "corecognition_stage_sensorimotor"
-process_docs: !function utils.process_docs_stage_sensorimotor
-
-include: _default_template_yaml

@@ -1,4 +1,0 @@
-dataset_name: "IQ_Test"
-tag: "blink_groups"
-task: "blink_iq_test"
-include: _default_template_yaml

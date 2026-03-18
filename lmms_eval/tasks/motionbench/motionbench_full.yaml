@@ -1,3 +1,0 @@
-include: _default_template_yaml
-task: motionbench_full
-process_docs: !function utils.motionbench_process_docs

@@ -1,3 +1,0 @@
-include: _default_template_yaml
-task: mathcanvas_calculus_and_vector
-dataset_name: Calculus_and_Vector

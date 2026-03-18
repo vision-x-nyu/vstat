@@ -1,6 +1,9 @@
 group: longvid-reasoning-eval_5min
 task:
-  - longvid-reasoning-eval_5min_hidden_dice_roll
-  - longvid-reasoning-eval_5min_memory_sliding_puzzle
+  - longvid-reasoning-eval_5min_block_counting
   - longvid-reasoning-eval_5min_ring_toss_counting_physics
+  - longvid-reasoning-eval_5min_hidden_dice_roll
+  - longvid-reasoning-eval_5min_rhythm_game
+  - longvid-reasoning-eval_5min_shell_game
+  - longvid-reasoning-eval_5min_memory_sliding_puzzle
   - longvid-reasoning-eval_5min_tilt_box

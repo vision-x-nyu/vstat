@@ -1,4 +1,0 @@
-dataset_name: "Object_Localization"
-tag: "blink_groups"
-task: "blink_object_localization"
-include: _default_template_yaml

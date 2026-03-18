@@ -1,4 +1,0 @@
-dataset_name: tangram_puzzle_vsim
-test_split: test
-task: "stare_tangram_puzzle_vsim"
-include: _default_template_yaml

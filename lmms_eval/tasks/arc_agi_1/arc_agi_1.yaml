@@ -1,3 +1,0 @@
-include: _default_template_yaml
-task: arc_agi_1
-test_split: eval

@@ -1,4 +1,0 @@
-include: _default_template_yaml
-task: tvbench_action_antonym
-dataset_name: action_antonym
-test_split: train

@@ -1,4 +1,0 @@
-dataset_name: perspective
-test_split: test
-task: "stare_perspective"
-include: _default_template_yaml

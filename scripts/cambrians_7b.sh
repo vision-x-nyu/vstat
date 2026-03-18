@@ -1,6 +1,6 @@
 MODEL="nyu-visionx/Cambrian-S-7B"
-TASK_NAME="longvid-reasoning-eval"
-OUTPUT_DIR="/nas2/longvideo_eval/results/cambrians_7b"
+TASK_NAME="longvid-reasoning-eval_5min"
+OUTPUT_DIR="/nas2/longvideo_eval/results/cambrians_7b/longvid_reasoning_eval_5min_debug"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
 BATCH_SIZE=1

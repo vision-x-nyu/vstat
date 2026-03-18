@@ -1,4 +1,0 @@
-group: charxiv_reasoning
-task:
-  - charxiv_val_descriptive_cot
-  - charxiv_val_reasoning_cot

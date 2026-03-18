@@ -1,4 +1,0 @@
-dataset_name: 2d_va
-test_split: test
-task: "stare_2d_va"
-include: _default_template_yaml

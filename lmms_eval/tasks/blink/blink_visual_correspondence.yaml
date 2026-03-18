@@ -1,4 +1,0 @@
-dataset_name: "Visual_Correspondence"
-tag: "blink_groups"
-task: "blink_visual_correspondence"
-include: _default_template_yaml

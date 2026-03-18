@@ -1,4 +1,0 @@
-test_split: placement
-tag: "refspatial_groups"
-task: "refspatial_placement"
-include: _default_template_yaml

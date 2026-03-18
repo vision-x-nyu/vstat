@@ -1,0 +1,8 @@
+group: longvid-reasoning-eval_2min
+task:
+  - longvid-reasoning-eval_2min_block_counting
+  - longvid-reasoning-eval_2min_hidden_dice_roll
+  - longvid-reasoning-eval_2min_rhythm_game
+  - longvid-reasoning-eval_2min_shell_game
+  - longvid-reasoning-eval_2min_memory_sliding_puzzle
+  - longvid-reasoning-eval_2min_tilt_box
