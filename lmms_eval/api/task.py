@@ -1525,9 +1525,9 @@ class ConfigurableTask(Task):
     def process_results(self, doc, results, full_docs=None):
         if self.OUTPUT_TYPE == "generate_until":
             if isinstance(results, list) and isinstance(results[0], list):
-                results = [res.strip() for res in results[0]]
+                results = [(res or "").strip() for res in results[0]]
             else:
-                results = [res.strip() for res in results]
+                results = [(res or "").strip() for res in results]
 
         kwargs = {}
         if full_docs is not None:
@@ -1612,7 +1612,7 @@ class ConfigurableTask(Task):
 
         elif "generate_until" in self.OUTPUT_TYPE:
             gold = self.doc_to_target(doc)
-            result = [res.strip() for res in results]
+            result = [(res or "").strip() for res in results]
             if self.config.doc_to_choice is not None:
                 # If you set doc_to_choice,
                 # it assumes that doc_to_target returns a number.

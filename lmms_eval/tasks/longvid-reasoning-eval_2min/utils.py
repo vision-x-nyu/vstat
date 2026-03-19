@@ -2,7 +2,7 @@
 
 Brief description:
 Load the nested 2min Blender QA JSON into lmms_eval subtasks and delegate
-prompting, scoring, and markdown reporting to the shared longvid helpers.
+prompting and scoring to the shared longvid helpers.
 
 Usage:
 Referenced by the YAML task configs in this directory via `!function`.
