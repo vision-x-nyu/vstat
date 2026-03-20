@@ -30,6 +30,13 @@ ipython_config.py
 
 # Environment and secrets
 .env
+*.json
+*.jsonl
+*.md
+
+*.sh
+
+eval_markdown/
 
 # Caches and temp
 **/.cache

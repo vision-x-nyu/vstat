@@ -20,8 +20,6 @@ import os
 import re
 
 from datasets import Dataset
-
-from lmms_eval.tasks.longvid_reasoning_eval_markdown import write_markdown_report
 MRA_METRIC = "MRA:.5:.95:.05"
 MCQ_TASKS = frozenset({"memory_sliding_puzzle", "opaque", "shell_game", "shell_game_rotate"})
 TASK_INSTRUCTIONS = {
@@ -190,9 +188,7 @@ def _build_metric_payload(doc, prediction_raw, prediction_parsed, score):
 def _aggregate_metric(results, metric_name):
     if not results:
         return 0.0
-    score = sum(result["score"] for result in results) / len(results)
-    write_markdown_report(results, metric_name, score, _format_options_block)
-    return score
+    return sum(result["score"] for result in results) / len(results)
 
 
 def _format_number(value):
