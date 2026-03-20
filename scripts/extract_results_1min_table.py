@@ -21,7 +21,7 @@ OPEN_SOURCE_MODELS = [
     ("cambrians_3b", "Cambrian-S-3B"), ("cambrians_1p5b", "Cambrian-S-1.5B"), ("llava_onevision_7b", "LLaVA-OV-7B"),
     ("llava_onevision_0.5b", "LLaVA-OV-0.5B"),
 ]
-API_MODELS = [("gpt5p4", "GPT-5.4"), ("openrouter_gemini3p1_pro", "Gemini-3.1-Pro"), ("openrouter_gemini3_flash", "Gemini-3-Flash")]
+API_MODELS = [("gpt5p4", "GPT-5.4"), ("gemini3p1_pro_preview", "Gemini-3.1-Pro"), ("gemini3_flash", "Gemini-3.0-Flash")]
 MODEL_SECTIONS = [("Proprietary Models (API)", API_MODELS), ("Open-Source Models", OPEN_SOURCE_MODELS)]
 METRIC_COLUMNS = ["avg"] + ALL_TASKS
 BEST_COLOR = "#E9E9E9"
