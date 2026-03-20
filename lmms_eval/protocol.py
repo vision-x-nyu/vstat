@@ -1,3 +1,4 @@
+import base64
 import os
 from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
@@ -12,6 +13,17 @@ from lmms_eval.models.model_utils.media_encoder import encode_image_to_base64
 VideoReader, _has_decord = optional_import("decord", "VideoReader")
 cpu, _ = optional_import("decord", "cpu")
 fetch_video, _has_qwen_vl = optional_import("qwen_vl_utils", "fetch_video")
+
+_VIDEO_MIME_TYPES = {
+    ".mp4": "video/mp4",
+    ".webm": "video/webm",
+    ".mov": "video/mov",
+    ".mpeg": "video/mpeg",
+    ".avi": "video/mp4",
+    ".flv": "video/mp4",
+    ".wmv": "video/mp4",
+    ".mkv": "video/webm",
+}
 
 
 class ChatTextContent(BaseModel):
@@ -80,7 +92,7 @@ class ChatMessages(BaseModel):
             hf_messages.append(hf_message)
         return hf_messages
 
-    def to_openai_messages(self, video_kwargs: Optional[Dict[str, str]] = None):
+    def to_openai_messages(self, video_kwargs: Optional[Dict[str, str]] = None, video_as_url: bool = False):
         if video_kwargs is None:
             video_kwargs = {}
         openai_messages = []
@@ -101,18 +113,25 @@ class ChatMessages(BaseModel):
                         }
                     )
                 elif content.type == "video":
-                    if fetch_video is None:
-                        raise ImportError("qwen_vl_utils is required for video processing. Please install it with: pip install qwen-vl-utils")
-                    video_input = fetch_video({"type": "video", "video": content.url, **video_kwargs})
-                    for frame in video_input:
-                        image = Image.fromarray(frame.permute(1, 2, 0).numpy().astype(np.uint8))
+                    if video_as_url:
                         openai_message["content"].append(
                             {
-                                "type": "image_url",
-                                "image_url": {"url": f"data:{mime_type};base64,{self.encode_image(image, encode_cache, image_format, quality)}"},
+                                "type": "video_url",
+                                "video_url": {"url": _encode_video_to_data_url(content.url)},
                             }
                         )
-                # TODO, audio hasn't been implemented yet
+                    else:
+                        if fetch_video is None:
+                            raise ImportError("qwen_vl_utils is required for video processing. Please install it with: pip install qwen-vl-utils")
+                        video_input = fetch_video({"type": "video", "video": content.url, **video_kwargs})
+                        for frame in video_input:
+                            image = Image.fromarray(frame.permute(1, 2, 0).numpy().astype(np.uint8))
+                            openai_message["content"].append(
+                                {
+                                    "type": "image_url",
+                                    "image_url": {"url": f"data:{mime_type};base64,{self.encode_image(image, encode_cache, image_format, quality)}"},
+                                }
+                            )
                 elif content.type == "audio":
                     openai_message["content"].append({"type": "audio_url", "audio_url": {"url": content.url}})
             openai_messages.append(openai_message)
@@ -193,3 +212,11 @@ class ChatMessages(BaseModel):
             cache=cache,
             use_path_cache=True,
         )
+
+
+def _encode_video_to_data_url(video_path: str) -> str:
+    ext = os.path.splitext(video_path)[1].lower()
+    mime = _VIDEO_MIME_TYPES.get(ext, "video/mp4")
+    with open(video_path, "rb") as fh:
+        b64 = base64.b64encode(fh.read()).decode("utf-8")
+    return f"data:{mime};base64,{b64}"

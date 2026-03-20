@@ -78,6 +78,7 @@ class OpenAICompatible(lmms):
         azure_openai: bool = False,
         max_frames_num: int = 10,
         video_fps: Optional[float] = None,
+        video_as_url: bool = False,
         httpx_trust_env: bool = True,
         batch_size: int = 64,
         num_concurrent: int = 32,
@@ -113,6 +114,7 @@ class OpenAICompatible(lmms):
         self.max_size_in_mb = max_size_in_mb  # some models have a limit on the size of the image
         self.max_frames_num = max_frames_num
         self.video_fps = float(video_fps) if video_fps is not None else None
+        self.video_as_url = parse_bool(video_as_url)
         self.num_concurrent = max(1, int(num_concurrent))
         self.adaptive_concurrency = parse_bool(adaptive_concurrency)
         self.adaptive_config = AdaptiveConcurrencyConfig.from_raw(
@@ -274,6 +276,25 @@ class OpenAICompatible(lmms):
 
         return base64_frames
 
+    _VIDEO_MIME_TYPES = {
+        ".mp4": "video/mp4",
+        ".webm": "video/webm",
+        ".mov": "video/mov",
+        ".mpeg": "video/mpeg",
+        ".avi": "video/mp4",
+        ".flv": "video/mp4",
+        ".wmv": "video/mp4",
+        ".mkv": "video/webm",
+    }
+
+    @staticmethod
+    def encode_video_to_data_url(video_path: str) -> str:
+        ext = os.path.splitext(video_path)[1].lower()
+        mime = OpenAICompatible._VIDEO_MIME_TYPES.get(ext, "video/mp4")
+        with open(video_path, "rb") as fh:
+            b64 = base64.b64encode(fh.read()).decode("utf-8")
+        return f"data:{mime};base64,{b64}"
+
     def encode_audio_file(self, audio_path: str):
         ext = os.path.splitext(audio_path)[1].lower().lstrip(".")
         audio_format = ext if ext in {"wav", "mp3", "flac", "aac", "ogg", "m4a"} else "wav"
@@ -429,8 +450,11 @@ class OpenAICompatible(lmms):
                 imgs = []
                 for visual in visuals:
                     if isinstance(visual, str) and (".mp4" in visual or ".avi" in visual or ".mov" in visual or ".flv" in visual or ".wmv" in visual or ".webm" in visual or ".mkv" in visual):
-                        frames = self.encode_video(visual, self.max_frames_num)
-                        imgs.extend(frames)
+                        if self.video_as_url:
+                            imgs.append({"video_data_url": self.encode_video_to_data_url(visual)})
+                        else:
+                            frames = self.encode_video(visual, self.max_frames_num)
+                            imgs.extend(frames)
                     elif isinstance(visual, str) and (".wav" in visual or ".mp3" in visual or ".flac" in visual or ".aac" in visual or ".ogg" in visual or ".m4a" in visual):
                         audio_b64, audio_format = self.encode_audio_file(visual)
                         imgs.append({"audio_b64": audio_b64, "audio_format": audio_format})
@@ -451,7 +475,14 @@ class OpenAICompatible(lmms):
             }
             payload["messages"][0]["content"].append({"type": "text", "text": context})
             for img in imgs:
-                if isinstance(img, dict) and "audio_b64" in img:
+                if isinstance(img, dict) and "video_data_url" in img:
+                    payload["messages"][0]["content"].append(
+                        {
+                            "type": "video_url",
+                            "video_url": {"url": img["video_data_url"]},
+                        }
+                    )
+                elif isinstance(img, dict) and "audio_b64" in img:
                     payload["messages"][0]["content"].append(
                         {
                             "type": "input_audio",

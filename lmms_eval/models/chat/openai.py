@@ -186,7 +186,7 @@ class OpenAICompatible(OpenAICompatibleSimple):
                 video_kwargs = {"nframes": self.max_frames_num}
 
             payload = {
-                "messages": chat_messages.to_openai_messages(video_kwargs=video_kwargs),
+                "messages": chat_messages.to_openai_messages(video_kwargs=video_kwargs, video_as_url=self.video_as_url),
                 "model": self.model_version,
                 "max_tokens": max_new_tokens,
                 "temperature": temperature,
