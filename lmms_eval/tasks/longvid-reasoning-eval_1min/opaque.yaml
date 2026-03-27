@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_1min_opaque
+process_docs: !function utils.process_opaque_docs
+include: _default_template_yaml

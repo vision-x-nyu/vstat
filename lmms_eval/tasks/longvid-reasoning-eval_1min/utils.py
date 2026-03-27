@@ -2,8 +2,8 @@
 
 Brief description:
 Load the nested 1min Blender QA JSON into lmms_eval subtasks and score
-exact-match accuracy. MCQ tasks compare predicted letter; free-form tasks
-parse integers or structured answers.
+exact-match accuracy. MCQ tasks compare predicted option letters; free-form
+tasks parse integers or success / failure pairs.
 
 Usage:
 Referenced by the YAML task configs in this directory via `!function`.
@@ -23,27 +23,25 @@ import re
 from datasets import Dataset
 
 BENCH_KEY = "1min"
-
-ROW_COLUMN_PATTERN = re.compile(r"row\s*(\d+)\s*[,;/]?\s*column\s*(\d+)", re.IGNORECASE)
+OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
 SUCCESS_AFTER_PATTERN = re.compile(r"(?:success|successful)[^0-9]*(\d+)", re.IGNORECASE)
 SUCCESS_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:success|successful)", re.IGNORECASE)
 FAILURE_AFTER_PATTERN = re.compile(r"(?:failure|unsuccessful)[^0-9]*(\d+)", re.IGNORECASE)
 FAILURE_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:failure|unsuccessful)", re.IGNORECASE)
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
-
 MCQ_TASKS = frozenset({
     "memory_sliding_puzzle",
+    "opaque",
     "shell_game",
     "shell_game_rotate",
-    "opaque",
+    "tilt_box",
 })
-
 TASK_INSTRUCTIONS = {
     "hidden_dice_roll": "Return only the final count as a single integer.\nAnswer:",
     "memory_sliding_puzzle": "",
     "ring_toss_counting_physics": "Return only `Success: X, Failure: Y`.\nAnswer:",
-    "tilt_box": "Return only the final corner number as a single integer from 1 to 4.\nAnswer:",
+    "tilt_box": "",
     "shell_game": "",
     "shell_game_rotate": "",
     "opaque": "",
@@ -52,6 +50,7 @@ TASK_INSTRUCTIONS = {
     "make_coffee": "Return only the final count as a single integer.\nAnswer:",
     "tighten_untighten": "Return only the final count as a single integer.\nAnswer:",
 }
+TILT_BOX_CHOICES = ["1", "2", "3", "4"]
 
 
 def _build_task_dataset(dataset, source_task):
@@ -63,20 +62,27 @@ def _build_task_dataset(dataset, source_task):
         answer = doc["answer"]
         assert question is not None, f"Missing question for {source_task}"
         assert answer is not None, f"Missing answer for {source_task}"
-
+        question_text = question.strip()
         is_mcq = source_task in MCQ_TASKS
         flat_doc = {
             "source_task": source_task,
             "video_id": str(doc["video_id"]),
             "video_path": doc["video_path"],
-            "question": question.strip(),
+            "question": question_text,
             "is_mcq": is_mcq,
             "choices": doc.get("choices"),
             "answer_index": doc.get("answer_index"),
         }
-
-        if is_mcq:
-            flat_doc["answer_text"] = str(answer)
+        if source_task == "tilt_box":
+            choices = list(doc.get("choices") or TILT_BOX_CHOICES)
+            flat_doc["choices"] = choices
+            flat_doc["question"] = _ensure_mcq_question(question_text, choices)
+            flat_doc["answer_text"] = _resolve_tilt_box_answer(answer, doc.get("answer_index"))
+        elif is_mcq:
+            choices = doc.get("choices")
+            assert choices is not None, f"Missing choices for {source_task}/{doc['video_id']}"
+            flat_doc["choices"] = choices
+            flat_doc["answer_text"] = str(answer).strip()
         elif source_task == "ring_toss_counting_physics":
             success = int(answer["success"])
             failure = int(answer["failure"])
@@ -87,34 +93,27 @@ def _build_task_dataset(dataset, source_task):
             value = int(answer)
             flat_doc["target_value"] = value
             flat_doc["answer_text"] = str(value)
-
         flat_docs.append(flat_doc)
     return Dataset.from_list(flat_docs)
 
 
-def process_block_counting_docs(dataset):
-    return _build_task_dataset(dataset, "block_counting")
+def _make_processor(source_task):
+    def process_docs(dataset):
+        return _build_task_dataset(dataset, source_task)
 
-def process_make_coffee_docs(dataset):
-    return _build_task_dataset(dataset, "make_coffee")
+    return process_docs
 
-def process_tighten_untighten_docs(dataset):
-    return _build_task_dataset(dataset, "tighten_untighten")
 
-def process_hidden_dice_roll_docs(dataset):
-    return _build_task_dataset(dataset, "hidden_dice_roll")
-
-def process_rhythm_game_docs(dataset):
-    return _build_task_dataset(dataset, "rhythm_game")
-
-def process_shell_game_rotate_docs(dataset):
-    return _build_task_dataset(dataset, "shell_game_rotate")
-
-def process_memory_sliding_puzzle_docs(dataset):
-    return _build_task_dataset(dataset, "memory_sliding_puzzle")
-
-def process_tilt_box_docs(dataset):
-    return _build_task_dataset(dataset, "tilt_box")
+process_block_counting_docs = _make_processor("block_counting")
+process_hidden_dice_roll_docs = _make_processor("hidden_dice_roll")
+process_make_coffee_docs = _make_processor("make_coffee")
+process_memory_sliding_puzzle_docs = _make_processor("memory_sliding_puzzle")
+process_opaque_docs = _make_processor("opaque")
+process_rhythm_game_docs = _make_processor("rhythm_game")
+process_shell_game_docs = _make_processor("shell_game")
+process_shell_game_rotate_docs = _make_processor("shell_game_rotate")
+process_tighten_untighten_docs = _make_processor("tighten_untighten")
+process_tilt_box_docs = _make_processor("tilt_box")
 
 
 def doc_to_visual(doc):
@@ -138,18 +137,30 @@ def doc_to_target(doc):
     return doc["answer_text"]
 
 
-def _extract_last_integer(text, allowed_values=None):
+def _ensure_mcq_question(question, choices):
+    question = question.strip()
+    if "(A)" in question and "Please answer with the letter" in question:
+        return question
+    option_lines = [f"({OPTION_LETTERS[index]}) {choice}" for index, choice in enumerate(choices)]
+    return question + "\n\n" + "\n".join(option_lines) + "\n\nPlease answer with the letter (A, B, C, or D)."
+
+
+def _resolve_tilt_box_answer(answer, answer_index):
+    answer_text = str(answer).strip().upper()
+    if answer_text in OPTION_LETTERS:
+        return answer_text
+    if answer_index is not None:
+        index = int(answer_index)
+        assert 0 <= index < len(OPTION_LETTERS), f"Bad answer_index: {answer_index}"
+        return OPTION_LETTERS[index]
+    corner = int(answer)
+    assert 1 <= corner <= len(TILT_BOX_CHOICES), f"Bad tilt_box answer: {answer}"
+    return OPTION_LETTERS[corner - 1]
+
+
+def _extract_last_integer(text):
     matches = [int(m) for m in INTEGER_PATTERN.findall(str(text))]
-    if allowed_values is not None:
-        matches = [m for m in matches if m in allowed_values]
     return matches[-1] if matches else None
-
-
-def _extract_row_column(text):
-    match = ROW_COLUMN_PATTERN.search(str(text))
-    if match is None:
-        return None
-    return int(match.group(1)), int(match.group(2))
 
 
 def _extract_keyword_integer(pattern, text):
@@ -179,13 +190,10 @@ def _extract_mcq_letter(text):
 
 
 def _parse_prediction(doc, prediction):
-    source_task = doc["source_task"]
     if doc["is_mcq"]:
         return _extract_mcq_letter(prediction)
-    if source_task == "ring_toss_counting_physics":
+    if doc["source_task"] == "ring_toss_counting_physics":
         return _extract_success_failure(prediction)
-    if source_task == "tilt_box":
-        return _extract_last_integer(prediction, allowed_values={1, 2, 3, 4})
     return _extract_last_integer(prediction)
 
 
@@ -194,8 +202,7 @@ def _is_correct(doc, parsed_prediction):
         return False
     if doc["is_mcq"]:
         return parsed_prediction == doc["answer_text"]
-    source_task = doc["source_task"]
-    if source_task == "ring_toss_counting_physics":
+    if doc["source_task"] == "ring_toss_counting_physics":
         return parsed_prediction == (doc["target_success"], doc["target_failure"])
     return parsed_prediction == doc.get("target_value")
 
