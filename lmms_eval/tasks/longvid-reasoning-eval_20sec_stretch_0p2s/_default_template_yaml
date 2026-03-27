@@ -1,8 +1,8 @@
 dataset_path: json
 dataset_kwargs:
   data_files:
-    test: /Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/1min_stretch_0p2s.json
-task: longvid-reasoning-eval_1min_stretch_0p2s
+    test: /Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/20sec_stretch_0p2s.json
+task: longvid-reasoning-eval_20sec_stretch_0p2s
 test_split: test
 output_type: generate_until
 doc_to_visual: !function utils.doc_to_visual
