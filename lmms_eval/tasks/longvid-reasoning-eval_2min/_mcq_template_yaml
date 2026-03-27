@@ -1,7 +1,7 @@
 dataset_path: json
 dataset_kwargs:
   data_files:
-    test: /nas2/longvideo_eval/blender/data/2min/merged_qa.json
+    test: /nas2/longvideo_eval/blender/data/merged_qa/2min.json
 task: longvid-reasoning-eval_2min
 test_split: test
 output_type: generate_until
