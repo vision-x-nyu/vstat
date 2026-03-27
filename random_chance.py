@@ -1,8 +1,8 @@
 """Compute chance-level baselines for longvid-reasoning-eval tasks.
 
 Usage:
-    python random_chance.py /nas2/longvideo_eval/blender/data/merged_qa/1min.json \
-        --output /nas2/longvideo_eval/longvid-reasoning-eval/results/1min/chance_levels.json
+    python random_chance.py /Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/1min.json \
+        --output /Users/sihyun/Desktop/Research/projects/NYU/codes/longvid-reasoning-eval/results/1min/chance_levels.json
 
 Input spec:
     merged_qa.json with structure:

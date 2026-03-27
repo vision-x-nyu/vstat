@@ -3,8 +3,8 @@
 import json
 from pathlib import Path
 
-DEFAULT_RESULTS_ROOT = Path("/nas2/longvideo_eval/longvid-reasoning-eval/results/1min/model_defaults")
-DEFAULT_CHANCE_PATH = Path("/nas2/longvideo_eval/longvid-reasoning-eval/results/1min/chance_levels.json")
+DEFAULT_RESULTS_ROOT = Path("/Users/sihyun/Desktop/Research/projects/NYU/codes/longvid-reasoning-eval/results/1min/model_defaults")
+DEFAULT_CHANCE_PATH = Path("/Users/sihyun/Desktop/Research/projects/NYU/codes/longvid-reasoning-eval/results/1min/chance_levels.json")
 SUMMARY_FILENAME = "longvid_reasoning_eval_1min_summary.md"
 TASK_PREFIX = "longvid-reasoning-eval_1min_"
 NUMERIC_TASKS = ["block_counting", "make_coffee", "ring_toss_counting_physics", "tighten_untighten", "hidden_dice_roll", "rhythm_game", "tilt_box"]

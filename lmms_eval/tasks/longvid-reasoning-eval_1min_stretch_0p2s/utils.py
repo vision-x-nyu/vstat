@@ -1,15 +1,15 @@
-"""Task helpers for longvid-reasoning-eval_1min.
+"""Task helpers for longvid-reasoning-eval_1min_stretch_0p2s.
 
 Brief description:
-Load the nested 1min Blender QA JSON into lmms_eval subtasks and score
+Load the nested 1min_stretch_0p2s Blender QA JSON into lmms_eval subtasks and score
 exact-match accuracy. MCQ tasks compare predicted option letters; free-form
-tasks parse integer counts (including ring-toss success counts).
+tasks parse integers or success / failure pairs.
 
 Usage:
 Referenced by the YAML task configs in this directory via `!function`.
 
 Input spec:
-`/Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/1min.json` with
+`/Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/1min_stretch_0p2s.json` with
 `data -> 1min -> <task_name> -> list[example]`.
 
 Output spec:
@@ -20,14 +20,15 @@ Each subtask exposes flat documents with `video_path`, `question`,
 import os
 import re
 
-import numpy as np
 from datasets import Dataset
-
-from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
 
 BENCH_KEY = "1min"
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
+SUCCESS_AFTER_PATTERN = re.compile(r"(?:success|successful)[^0-9]*(\d+)", re.IGNORECASE)
+SUCCESS_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:success|successful)", re.IGNORECASE)
+FAILURE_AFTER_PATTERN = re.compile(r"(?:failure|unsuccessful)[^0-9]*(\d+)", re.IGNORECASE)
+FAILURE_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:failure|unsuccessful)", re.IGNORECASE)
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
 MCQ_TASKS = frozenset({
     "memory_sliding_puzzle",
@@ -39,7 +40,7 @@ MCQ_TASKS = frozenset({
 TASK_INSTRUCTIONS = {
     "hidden_dice_roll": "Return only the final count as a single integer.\nAnswer:",
     "memory_sliding_puzzle": "",
-    "ring_toss_counting_physics": "Return only the number of successful tosses as a single integer.\nAnswer:",
+    "ring_toss_counting_physics": "Return only `Success: X, Failure: Y`.\nAnswer:",
     "tilt_box": "",
     "shell_game": "",
     "shell_game_rotate": "",
@@ -54,7 +55,7 @@ TILT_BOX_CHOICES = ["1", "2", "3", "4"]
 
 def _build_task_dataset(dataset, source_task):
     assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = merged_qa_data_tree(dataset)[BENCH_KEY][source_task]
+    source_docs = dataset[0]["data"][BENCH_KEY][source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]
@@ -84,8 +85,10 @@ def _build_task_dataset(dataset, source_task):
             flat_doc["answer_text"] = str(answer).strip()
         elif source_task == "ring_toss_counting_physics":
             success = int(answer["success"])
-            flat_doc["target_value"] = success
-            flat_doc["answer_text"] = str(success)
+            failure = int(answer["failure"])
+            flat_doc["target_success"] = success
+            flat_doc["target_failure"] = failure
+            flat_doc["answer_text"] = f"Success: {success}, Failure: {failure}"
         else:
             value = int(answer)
             flat_doc["target_value"] = value
@@ -121,6 +124,7 @@ def doc_to_visual(doc):
     video_path = doc["video_path"]
     if video_path.startswith(_OLD_DATA_ROOT):
         video_path = DATA_ROOT + video_path[len(_OLD_DATA_ROOT):]
+    video_path = video_path.replace("/1min/", "/1min_stretch_0p2s/")
     assert os.path.exists(video_path), f"Missing video file: {video_path}"
     return [video_path]
 
@@ -166,6 +170,27 @@ def _extract_last_integer(text):
     return matches[-1] if matches else None
 
 
+def _extract_keyword_integer(pattern, text):
+    match = pattern.search(str(text))
+    if match is None:
+        return None
+    groups = [g for g in match.groups() if g is not None]
+    return int(groups[0]) if groups else None
+
+
+def _extract_success_failure(text):
+    success = _extract_keyword_integer(SUCCESS_AFTER_PATTERN, text)
+    if success is None:
+        success = _extract_keyword_integer(SUCCESS_BEFORE_PATTERN, text)
+    failure = _extract_keyword_integer(FAILURE_AFTER_PATTERN, text)
+    if failure is None:
+        failure = _extract_keyword_integer(FAILURE_BEFORE_PATTERN, text)
+    if success is not None and failure is not None:
+        return success, failure
+    matches = [int(m) for m in INTEGER_PATTERN.findall(str(text))]
+    return tuple(matches[-2:]) if len(matches) >= 2 else None
+
+
 def _extract_mcq_letter(text):
     matches = MCQ_LETTER_PATTERN.findall(str(text).upper())
     return matches[-1] if matches else None
@@ -174,37 +199,26 @@ def _extract_mcq_letter(text):
 def _parse_prediction(doc, prediction):
     if doc["is_mcq"]:
         return _extract_mcq_letter(prediction)
+    if doc["source_task"] == "ring_toss_counting_physics":
+        return _extract_success_failure(prediction)
     return _extract_last_integer(prediction)
 
 
-def _abs_dist_norm(pred, target):
-    if target == 0:
-        return 0.0 if pred == 0 else float("inf")
-    return abs(pred - target) / target
-
-
-def _mean_relative_accuracy(pred, target, start=0.5, end=0.95, interval=0.05):
-    num_pts = (end - start) / interval + 2
-    conf_intervs = np.linspace(start, end, int(num_pts))
-    return float((_abs_dist_norm(pred, target) <= 1 - conf_intervs).mean())
-
-
-def _compute_score(doc, parsed):
+def _is_correct(doc, parsed_prediction):
+    if parsed_prediction is None:
+        return False
     if doc["is_mcq"]:
-        correct = parsed is not None and parsed == doc["answer_text"]
-        return 1.0 if correct else 0.0
-    if parsed is None:
-        return 0.0
-    return _mean_relative_accuracy(parsed, doc["target_value"])
+        return parsed_prediction == doc["answer_text"]
+    if doc["source_task"] == "ring_toss_counting_physics":
+        return parsed_prediction == (doc["target_success"], doc["target_failure"])
+    return parsed_prediction == doc.get("target_value")
 
 
 def process_results(doc, results):
     prediction = str(results[0]).strip() if results else ""
-    parsed = _parse_prediction(doc, prediction)
-    return {"accuracy": {"score": _compute_score(doc, parsed)}}
+    parsed_prediction = _parse_prediction(doc, prediction)
+    return {"accuracy": {"is_correct": _is_correct(doc, parsed_prediction)}}
 
 
 def aggregate_accuracy(results):
-    if not results:
-        return 0.0
-    return round(sum(r["score"] for r in results) / len(results), 3)
+    return sum(r["is_correct"] for r in results) / len(results) if results else 0.0

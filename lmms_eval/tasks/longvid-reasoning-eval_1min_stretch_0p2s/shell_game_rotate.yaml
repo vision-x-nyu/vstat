@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_1min_stretch_0p2s_shell_game_rotate
+process_docs: !function utils.process_shell_game_rotate_docs
+include: _default_template_yaml

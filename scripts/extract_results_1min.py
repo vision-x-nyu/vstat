@@ -2,7 +2,7 @@
 
 Usage:
     python scripts/extract_results_1min.py
-    python scripts/extract_results_1min.py /nas2/longvideo_eval/longvid-reasoning-eval/results/1min/model_defaults
+    python scripts/extract_results_1min.py /Users/sihyun/Desktop/Research/projects/NYU/codes/longvid-reasoning-eval/results/1min/model_defaults
 
 Input spec:
     The results root contains per-model subdirectories with the newest

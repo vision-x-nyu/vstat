@@ -9,7 +9,7 @@ Usage:
 Referenced by the YAML task configs in this directory via `!function`.
 
 Input spec:
-`/nas2/longvideo_eval/blender/data/merged_qa/5min.json` with
+`/Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/5min.json` with
 `data -> 5min -> <task_name> -> list[example]`.
 
 Output spec:
@@ -108,8 +108,14 @@ def process_tilt_box_docs(dataset):
     return _build_task_dataset(dataset, "tilt_box")
 
 
+DATA_ROOT = "/Users/sihyun/Desktop/Research/projects/NYU/data"
+_OLD_DATA_ROOT = "/nas2/longvideo_eval/blender/data"
+
+
 def doc_to_visual(doc):
     video_path = doc["video_path"]
+    if video_path.startswith(_OLD_DATA_ROOT):
+        video_path = DATA_ROOT + video_path[len(_OLD_DATA_ROOT):]
     assert os.path.exists(video_path), f"Missing video file: {video_path}"
     return [video_path]
 
