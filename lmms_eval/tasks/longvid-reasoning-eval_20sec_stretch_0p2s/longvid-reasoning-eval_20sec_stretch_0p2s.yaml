@@ -7,4 +7,6 @@ task:
   - longvid-reasoning-eval_20sec_stretch_0p2s_opaque
   - longvid-reasoning-eval_20sec_stretch_0p2s_rhythm_game
   - longvid-reasoning-eval_20sec_stretch_0p2s_shell_game_rotate
+  - longvid-reasoning-eval_20sec_stretch_0p2s_shell_game
   - longvid-reasoning-eval_20sec_stretch_0p2s_tighten_untighten
+  - longvid-reasoning-eval_20sec_stretch_0p2s_tilt_box

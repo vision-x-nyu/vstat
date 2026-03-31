@@ -20,7 +20,6 @@ Each subtask exposes flat documents with `video_path`, `question`,
 import os
 import re
 
-import numpy as np
 from datasets import Dataset
 
 from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
@@ -177,34 +176,56 @@ def _parse_prediction(doc, prediction):
     return _extract_last_integer(prediction)
 
 
-def _abs_dist_norm(pred, target):
-    if target == 0:
-        return 0.0 if pred == 0 else float("inf")
-    return abs(pred - target) / target
-
-
-def _mean_relative_accuracy(pred, target, start=0.5, end=0.95, interval=0.05):
-    num_pts = (end - start) / interval + 2
-    conf_intervs = np.linspace(start, end, int(num_pts))
-    return float((_abs_dist_norm(pred, target) <= 1 - conf_intervs).mean())
-
-
-def _compute_score(doc, parsed):
+def _is_correct(doc, parsed_prediction):
+    if parsed_prediction is None:
+        return False
     if doc["is_mcq"]:
-        correct = parsed is not None and parsed == doc["answer_text"]
-        return 1.0 if correct else 0.0
-    if parsed is None:
+        return parsed_prediction == doc["answer_text"]
+    return parsed_prediction == doc.get("target_value")
+
+
+def _compute_mra(doc, parsed_prediction):
+    """Mean Relative Accuracy: max(0, 1 - |pred - gt| / gt). Only for numerical tasks."""
+    if doc["is_mcq"]:
+        return None
+    gt = doc.get("target_value")
+    if gt is None or parsed_prediction is None:
         return 0.0
-    return _mean_relative_accuracy(parsed, doc["target_value"])
+    if gt == 0:
+        return 1.0 if parsed_prediction == 0 else 0.0
+    return max(0.0, 1.0 - abs(parsed_prediction - gt) / abs(gt))
+
+
+def _compute_mae(doc, parsed_prediction):
+    """Mean Absolute Error. Only for numerical tasks."""
+    if doc["is_mcq"]:
+        return None
+    gt = doc.get("target_value")
+    if gt is None or parsed_prediction is None:
+        return None
+    return abs(parsed_prediction - gt)
 
 
 def process_results(doc, results):
     prediction = str(results[0]).strip() if results else ""
-    parsed = _parse_prediction(doc, prediction)
-    return {"accuracy": {"score": _compute_score(doc, parsed)}}
+    parsed_prediction = _parse_prediction(doc, prediction)
+    result = {"accuracy": {"is_correct": _is_correct(doc, parsed_prediction)}}
+    mra = _compute_mra(doc, parsed_prediction)
+    if mra is not None:
+        result["mra"] = {"mra_score": mra}
+    mae = _compute_mae(doc, parsed_prediction)
+    if mae is not None:
+        result["mae"] = {"mae_score": mae}
+    return result
 
 
 def aggregate_accuracy(results):
-    if not results:
-        return 0.0
-    return round(sum(r["score"] for r in results) / len(results), 3)
+    return sum(r["is_correct"] for r in results) / len(results) if results else 0.0
+
+
+def aggregate_mra(results):
+    return sum(r["mra_score"] for r in results) / len(results) if results else 0.0
+
+
+def aggregate_mae(results):
+    return sum(r["mae_score"] for r in results) / len(results) if results else 0.0

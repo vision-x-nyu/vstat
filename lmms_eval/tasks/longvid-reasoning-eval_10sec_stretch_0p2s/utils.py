@@ -1,49 +1,28 @@
-"""Task helpers for longvid-reasoning-eval_20sec_stretch_0p2s.
-
-Brief description:
-Load the nested 20sec_stretch_0p2s Blender QA JSON into lmms_eval subtasks and score
-exact-match accuracy. MCQ tasks compare predicted option letters; free-form
-tasks parse integers.
-
-Usage:
-Referenced by the YAML task configs in this directory via `!function`.
-
-Input spec:
-`/Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/20sec_stretch_0p2s.json` with
-`data -> 20sec -> <task_name> -> list[example]`.
-
-Output spec:
-Each subtask exposes flat documents with `video_path`, `question`,
-`answer_text`, `is_mcq`, `choices`. Metrics return mean `accuracy`.
-"""
+"""Task helpers for longvid-reasoning-eval_10sec_stretch_0p2s."""
 
 import os
 import re
 
 from datasets import Dataset
 
-BENCH_KEY = "20sec"
+BENCH_KEY = "10sec"
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
 MCQ_TASKS = frozenset({
-    "memory_sliding_puzzle",
-    "opaque",
     "shell_game",
     "shell_game_rotate",
+    "memory_sliding_puzzle",
     "tilt_box",
 })
 TASK_INSTRUCTIONS = {
-    "hidden_dice_roll":    "Return only the final count as a single integer.\nAnswer:",
+    "shell_game": "",
+    "shell_game_rotate": "",
     "memory_sliding_puzzle": "",
-    "tilt_box":            "",
-    "shell_game":          "",
-    "shell_game_rotate":   "",
-    "opaque":              "",
-    "rhythm_game":         "Return only the final count as a single integer.\nAnswer:",
-    "block_counting":      "Return only the final count as a single integer.\nAnswer:",
-    "make_coffee":         "Return only the final count as a single integer.\nAnswer:",
-    "tighten_untighten":   "Return only the final count as a single integer.\nAnswer:",
+    "tilt_box": "",
+    "hidden_dice_roll": "Return only the final count as a single integer.\nAnswer:",
+    "tighten_untighten": "Return only the final count as a single integer.\nAnswer:",
+    "rhythm_game": "Return only the final count as a single integer.\nAnswer:",
 }
 
 
@@ -85,19 +64,16 @@ def _make_processor(source_task):
     return process_docs
 
 
-process_block_counting_docs        = _make_processor("block_counting")
-process_hidden_dice_roll_docs      = _make_processor("hidden_dice_roll")
-process_make_coffee_docs           = _make_processor("make_coffee")
+process_shell_game_docs = _make_processor("shell_game")
+process_shell_game_rotate_docs = _make_processor("shell_game_rotate")
 process_memory_sliding_puzzle_docs = _make_processor("memory_sliding_puzzle")
-process_opaque_docs                = _make_processor("opaque")
-process_rhythm_game_docs           = _make_processor("rhythm_game")
-process_shell_game_docs            = _make_processor("shell_game")
-process_shell_game_rotate_docs     = _make_processor("shell_game_rotate")
-process_tighten_untighten_docs     = _make_processor("tighten_untighten")
-process_tilt_box_docs              = _make_processor("tilt_box")
+process_hidden_dice_roll_docs = _make_processor("hidden_dice_roll")
+process_tilt_box_docs = _make_processor("tilt_box")
+process_tighten_untighten_docs = _make_processor("tighten_untighten")
+process_rhythm_game_docs = _make_processor("rhythm_game")
 
 
-DATA_ROOT     = "/Users/sihyun/Desktop/Research/projects/NYU/data"
+DATA_ROOT      = "/Users/sihyun/Desktop/Research/projects/NYU/data"
 _OLD_DATA_ROOT = "/nas2/longvideo_eval/blender/data"
 
 
@@ -105,7 +81,7 @@ def doc_to_visual(doc):
     video_path = doc["video_path"]
     if video_path.startswith(_OLD_DATA_ROOT):
         video_path = DATA_ROOT + video_path[len(_OLD_DATA_ROOT):]
-    video_path = video_path.replace("/20sec/", "/20sec_stretch_0p2s/")
+    video_path = video_path.replace("/10sec/", "/10sec_stretch_0p2s/")
     assert os.path.exists(video_path), f"Missing video file: {video_path}"
     return [video_path]
 
@@ -125,13 +101,13 @@ def doc_to_target(doc):
     return doc["answer_text"]
 
 
-def _extract_last_integer(text):
-    matches = [int(m) for m in INTEGER_PATTERN.findall(str(text))]
+def _extract_mcq_letter(text):
+    matches = MCQ_LETTER_PATTERN.findall(str(text).upper())
     return matches[-1] if matches else None
 
 
-def _extract_mcq_letter(text):
-    matches = MCQ_LETTER_PATTERN.findall(str(text).upper())
+def _extract_last_integer(text):
+    matches = [int(m) for m in INTEGER_PATTERN.findall(str(text))]
     return matches[-1] if matches else None
 
 

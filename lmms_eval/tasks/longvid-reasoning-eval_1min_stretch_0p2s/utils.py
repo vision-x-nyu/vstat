@@ -214,11 +214,48 @@ def _is_correct(doc, parsed_prediction):
     return parsed_prediction == doc.get("target_value")
 
 
+def _compute_mra(doc, parsed_prediction):
+    """Mean Relative Accuracy: max(0, 1 - |pred - gt| / gt). Only for numerical tasks."""
+    if doc["is_mcq"]:
+        return None
+    gt = doc.get("target_value")
+    if gt is None or parsed_prediction is None:
+        return 0.0
+    if gt == 0:
+        return 1.0 if parsed_prediction == 0 else 0.0
+    return max(0.0, 1.0 - abs(parsed_prediction - gt) / abs(gt))
+
+
+def _compute_mae(doc, parsed_prediction):
+    """Mean Absolute Error. Only for numerical tasks."""
+    if doc["is_mcq"]:
+        return None
+    gt = doc.get("target_value")
+    if gt is None or parsed_prediction is None:
+        return None
+    return abs(parsed_prediction - gt)
+
+
 def process_results(doc, results):
     prediction = str(results[0]).strip() if results else ""
     parsed_prediction = _parse_prediction(doc, prediction)
-    return {"accuracy": {"is_correct": _is_correct(doc, parsed_prediction)}}
+    result = {"accuracy": {"is_correct": _is_correct(doc, parsed_prediction)}}
+    mra = _compute_mra(doc, parsed_prediction)
+    if mra is not None:
+        result["mra"] = {"mra_score": mra}
+    mae = _compute_mae(doc, parsed_prediction)
+    if mae is not None:
+        result["mae"] = {"mae_score": mae}
+    return result
 
 
 def aggregate_accuracy(results):
     return sum(r["is_correct"] for r in results) / len(results) if results else 0.0
+
+
+def aggregate_mra(results):
+    return sum(r["mra_score"] for r in results) / len(results) if results else 0.0
+
+
+def aggregate_mae(results):
+    return sum(r["mae_score"] for r in results) / len(results) if results else 0.0
