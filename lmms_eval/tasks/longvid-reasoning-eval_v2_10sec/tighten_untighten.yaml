@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_v2_10sec_tighten_untighten
+process_docs: !function utils.process_tighten_untighten_docs
+include: _default_template_yaml

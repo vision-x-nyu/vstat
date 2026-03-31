@@ -1,0 +1,9 @@
+group: longvid-reasoning-eval_v2_10sec
+task:
+  - longvid-reasoning-eval_v2_10sec_hidden_dice_roll
+  - longvid-reasoning-eval_v2_10sec_memory_sliding_puzzle
+  - longvid-reasoning-eval_v2_10sec_rhythm_game
+  - longvid-reasoning-eval_v2_10sec_shell_game
+  - longvid-reasoning-eval_v2_10sec_shell_game_rotate
+  - longvid-reasoning-eval_v2_10sec_tighten_untighten
+  - longvid-reasoning-eval_v2_10sec_tilt_box
