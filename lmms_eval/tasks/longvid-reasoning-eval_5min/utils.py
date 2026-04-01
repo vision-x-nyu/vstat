@@ -201,4 +201,7 @@ def process_results(doc, results):
 
 
 def aggregate_accuracy(results):
-    return sum(r["is_correct"] for r in results) / len(results) if results else 0.0
+    if not results:
+        return 0.0
+    mean = sum(r["is_correct"] for r in results) / len(results)
+    return round(mean, 3)

@@ -1,0 +1,137 @@
+"""Scan result JSON trees and build per-model × task × duration accuracy matrices.
+
+Input / output documented in scripts/render_data_v2_benchmark_md.py (CLI wrapper).
+"""
+
+from __future__ import annotations
+
+import json
+import re
+from collections import defaultdict
+from dataclasses import dataclass
+from pathlib import Path
+
+from data_v2_benchmark_constants import (
+    DURATIONS,
+    LMMS_RUN,
+    MCQ_TABLE_ORDER,
+    RUN_TS,
+    STRETCH_RE,
+    TASK_DISPLAY,
+    TASK_IDS_BY_SUFFIX,
+)
+
+
+@dataclass(frozen=True)
+class ResultRef:
+    sort_key: str
+    path: Path
+
+
+def path_has_stretch(p: Path) -> bool:
+    return STRETCH_RE.search(str(p)) is not None
+
+
+def run_sort_key(p: Path) -> str:
+    parent = p.parent.name
+    if RUN_TS.match(parent):
+        return parent
+    m = LMMS_RUN.search(parent)
+    if m:
+        return m.group(1)
+    return parent
+
+
+def parse_duration(p: Path) -> str | None:
+    s = str(p)
+    for d in DURATIONS:
+        if f"_v2_{d}" in s or f"eval_v2_{d}" in s:
+            return d
+    return None
+
+
+def model_key_from_path(root: Path, p: Path) -> str | None:
+    rel = p.relative_to(root)
+    assert len(rel.parts) >= 1
+    return rel.parts[0]
+
+
+def is_results_filename(name: str) -> bool:
+    if name == "results.json":
+        return True
+    return re.match(r"^\d{8}_\d{6}_results\.json$", name) is not None
+
+
+def iter_result_files(root: Path, include_stretch: bool):
+    for p in root.rglob("*results.json"):
+        if not is_results_filename(p.name):
+            continue
+        if not include_stretch and path_has_stretch(p):
+            continue
+        yield p
+
+
+def load_task_scores(path: Path) -> dict[str, float]:
+    data = json.loads(path.read_text(encoding="utf-8"))
+    results = data.get("results", {})
+    out: dict[str, float] = {}
+    for key, payload in results.items():
+        if not isinstance(payload, dict):
+            continue
+        raw = payload.get("accuracy,none")
+        if not isinstance(raw, (int, float)):
+            continue
+        for tid in TASK_IDS_BY_SUFFIX:
+            if key.endswith(tid):
+                out[tid] = float(raw)
+                break
+    return out
+
+
+def pick_best_per_model_duration(root: Path, include_stretch: bool) -> dict[tuple[str, str], Path]:
+    best: dict[tuple[str, str], ResultRef] = {}
+    for p in iter_result_files(root, include_stretch):
+        mk = model_key_from_path(root, p)
+        dur = parse_duration(p)
+        assert mk is not None
+        assert dur is not None
+        sk = run_sort_key(p)
+        slot = (mk, dur)
+        if slot not in best or sk > best[slot].sort_key:
+            best[slot] = ResultRef(sk, p)
+    return {k: v.path for k, v in best.items()}
+
+
+def build_matrix(
+    root: Path,
+    include_stretch: bool,
+) -> dict[str, dict[str, dict[str, float]]]:
+    picked = pick_best_per_model_duration(root, include_stretch)
+    matrix: dict[str, dict[str, dict[str, float]]] = defaultdict(lambda: defaultdict(dict))
+    for (model_key, duration), path in picked.items():
+        for tid, acc in load_task_scores(path).items():
+            matrix[model_key][tid][duration] = acc
+    return matrix
+
+
+def fmt_pct(value: float | None) -> str:
+    if value is None:
+        return "—"
+    return f"{round(value * 100, 3):.3f}"
+
+
+def random_chance_mcq(task_id: str) -> str:
+    assert task_id in MCQ_TABLE_ORDER
+    if task_id in ("shell_game", "shell_game_rotate"):
+        return f"{round(100.0 / 3.0, 3):.3f}"
+    return "25.000"
+
+
+def table_header_task_blocks(task_ids: tuple[str, ...], cells_per_task: int) -> tuple[str, str]:
+    h1 = "| Group | Model |"
+    sep = "| --- | --- |"
+    for tid in task_ids:
+        title = TASK_DISPLAY[tid]
+        h1 += f" {title} |" + " |" * (cells_per_task - 1)
+        sep += (" --- |" * cells_per_task)
+    return h1, sep

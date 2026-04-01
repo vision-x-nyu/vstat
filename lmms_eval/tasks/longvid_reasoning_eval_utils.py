@@ -14,6 +14,7 @@ Nested Blender QA examples with `question`, `answer`, `choices`,
 Output spec:
 Flat docs with `task_id`, `source_task`, `video_id`, `video_path`, prompt
 fields, and either `accuracy` or `MRA:.5:.95:.05` metric payloads.
+Aggregated accuracy/MRA means use AGGREGATE_DECIMALS (3) on the [0, 1] scale.
 """
 
 import os
@@ -185,10 +186,14 @@ def _build_metric_payload(doc, prediction_raw, prediction_parsed, score):
     }
 
 
+AGGREGATE_DECIMALS = 3
+
+
 def _aggregate_metric(results, metric_name):
     if not results:
         return 0.0
-    return sum(result["score"] for result in results) / len(results)
+    mean = sum(result["score"] for result in results) / len(results)
+    return round(mean, AGGREGATE_DECIMALS)
 
 
 def _format_number(value):

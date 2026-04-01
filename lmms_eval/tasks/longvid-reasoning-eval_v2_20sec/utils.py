@@ -15,7 +15,7 @@ Run `export_merged_qa.py --data-dir .../blender/data_v2` to build this file.
 
 Output spec:
 Each subtask exposes flat documents with `video_path`, `question`,
-`answer_text`, `is_mcq`, `choices`. Metrics return mean `accuracy`.
+`answer_text`, `is_mcq`, `choices`. Mean `accuracy` is rounded to 3 decimals on [0, 1].
 """
 
 import os
@@ -216,4 +216,7 @@ def process_results(doc, results):
 
 
 def aggregate_accuracy(results):
-    return sum(r["is_correct"] for r in results) / len(results) if results else 0.0
+    if not results:
+        return 0.0
+    mean = sum(r["is_correct"] for r in results) / len(results)
+    return round(mean, 3)

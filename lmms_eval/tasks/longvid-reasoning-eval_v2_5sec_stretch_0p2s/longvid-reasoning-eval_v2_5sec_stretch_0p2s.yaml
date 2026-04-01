@@ -3,6 +3,7 @@ task:
   - longvid-reasoning-eval_v2_5sec_stretch_0p2s_hidden_dice_roll
   - longvid-reasoning-eval_v2_5sec_stretch_0p2s_memory_sliding_puzzle
   - longvid-reasoning-eval_v2_5sec_stretch_0p2s_rhythm_game
+  - longvid-reasoning-eval_v2_5sec_stretch_0p2s_ring_toss_counting_physics
   - longvid-reasoning-eval_v2_5sec_stretch_0p2s_shell_game
   - longvid-reasoning-eval_v2_5sec_stretch_0p2s_shell_game_rotate
   - longvid-reasoning-eval_v2_5sec_stretch_0p2s_tighten_untighten

@@ -1,0 +1,11 @@
+Group	Model	Dice Roll 5s	Dice Roll 10s	Dice Roll 20s	Dice Roll Chall	Rhythm 5s	Rhythm 10s	Rhythm 20s	Rhythm Chall	Ring toss 5s	Ring toss 10s	Ring toss 20s	Ring toss Chall	tighten/loosen 5s	tighten/loosen 10s	tighten/loosen 20s	tighten/loosen Chall
+Uniform	Chance level (Random)	—	—	—	—	—	—	—	—	—	—	—	—	—	—	—	—
+Uniform	Chance level (Frequency)	—	—	—	—	—	—	—	—	—	—	—	—	—	—	—	—
+Open-source	InternVL3.5-8B	54.0	—	—	—	50.0	—	—	—	0.0	—	—	—	54.0	—	—	—
+Open-source	InternVL3.5-2B	22.0	—	—	—	14.0	—	—	—	6.0	—	—	—	50.0	—	—	—
+
+Group	Model	Shell Game 5s	Shell Game 10s	Shell Game 20s	Shell Game 1m	Shell Game (rotate) 5s	Shell Game (rotate) 10s	Shell Game (rotate) 20s	Shell Game (rotate) 1m	Slide Puzzle 5s	Slide Puzzle 10s	Slide Puzzle 20s	Slide Puzzle 1m	Tilt Box 5s	Tilt Box 10s	Tilt Box 20s	Tilt Box 1m
+Uniform	Chance level (Random)	33.3	33.3	33.3	—	33.3	33.3	33.3	—	25.0	25.0	25.0	—	25.0	25.0	25.0	—
+Uniform	Chance level (Frequency)	—	—	—	—	—	—	—	—	—	—	—	—	—	—	—	—
+Open-source	InternVL3.5-8B	30.0	—	—	—	28.0	—	—	—	76.0	—	—	—	26.0	—	—	—
+Open-source	InternVL3.5-2B	30.0	—	—	—	36.0	—	—	—	78.0	—	—	—	16.0	—	—	—
