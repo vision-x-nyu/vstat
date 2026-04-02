@@ -117,14 +117,14 @@ def build_matrix(
 def fmt_pct(value: float | None) -> str:
     if value is None:
         return "—"
-    return f"{round(value * 100, 3):.3f}"
+    return f"{round(float(value) * 100.0, 1):.1f}"
 
 
 def random_chance_mcq(task_id: str) -> str:
     assert task_id in MCQ_TABLE_ORDER
     if task_id in ("shell_game", "shell_game_rotate"):
-        return f"{round(100.0 / 3.0, 3):.3f}"
-    return "25.000"
+        return f"{round(100.0 / 3.0, 1):.1f}"
+    return f"{25.0:.1f}"
 
 
 def table_header_task_blocks(task_ids: tuple[str, ...], cells_per_task: int) -> tuple[str, str]:

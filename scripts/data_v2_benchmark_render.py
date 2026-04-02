@@ -45,11 +45,11 @@ def render_markdown(root: Path, include_stretch: bool) -> str:
         "- **Multiple-choice table:** *5s / 10s / 20s* filled from data; *1m* is not available (—).\n"
     )
     lines.append(
-        "- **Chance (Random)** uses 33.3% for 3-option shell tasks and 25.0% for 4-option tasks "
+        "- **Chance (Random)** uses 100/3≈33.3% for 3-option shell tasks and 25.0% for 4-option tasks "
         "(slide puzzle, tilt box), matching the reference sheet.\n\n---\n"
     )
 
-    lines.append("## Numerical answer (accuracy %)\n")
+    lines.append("## Numerical answer (MRA %)\n")
     h1, sep = table_header_task_blocks(NUMERIC_TASKS, 4)
     lines.extend((h1, sep))
     sub = "| | |"

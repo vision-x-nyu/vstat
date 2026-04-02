@@ -21,6 +21,7 @@ Each subtask exposes flat documents with `video_path`, `question`,
 import os
 import re
 
+import numpy as np
 from datasets import Dataset
 
 BENCH_KEY = "10sec"
@@ -199,24 +200,39 @@ def _parse_prediction(doc, prediction):
     return _extract_last_integer(prediction)
 
 
-def _is_correct(doc, parsed_prediction):
-    if parsed_prediction is None:
-        return False
+def _abs_dist_norm(pred, target):
+    if target == 0:
+        return 0.0 if pred == 0 else float("inf")
+    return abs(pred - target) / target
+
+
+def _mean_relative_accuracy(pred, target, start=0.5, end=0.95, interval=0.05):
+    num_pts = (end - start) / interval + 2
+    conf_intervs = np.linspace(start, end, int(num_pts))
+    return float((_abs_dist_norm(pred, target) <= 1 - conf_intervs).mean())
+
+
+def _compute_score(doc, parsed):
     if doc["is_mcq"]:
-        return parsed_prediction == doc["answer_text"]
+        correct = parsed is not None and parsed == doc["answer_text"]
+        return 1.0 if correct else 0.0
+    if parsed is None:
+        return 0.0
     if doc["source_task"] == "ring_toss_counting_physics":
-        return parsed_prediction == (doc["target_success"], doc["target_failure"])
-    return parsed_prediction == doc.get("target_value")
+        pred_s, pred_f = parsed
+        mra_s = _mean_relative_accuracy(pred_s, doc["target_success"])
+        mra_f = _mean_relative_accuracy(pred_f, doc["target_failure"])
+        return (mra_s + mra_f) / 2.0
+    return _mean_relative_accuracy(parsed, doc["target_value"])
 
 
 def process_results(doc, results):
     prediction = str(results[0]).strip() if results else ""
-    parsed_prediction = _parse_prediction(doc, prediction)
-    return {"accuracy": {"is_correct": _is_correct(doc, parsed_prediction)}}
+    parsed = _parse_prediction(doc, prediction)
+    return {"accuracy": {"score": _compute_score(doc, parsed)}}
 
 
 def aggregate_accuracy(results):
     if not results:
         return 0.0
-    mean = sum(r["is_correct"] for r in results) / len(results)
-    return round(mean, 3)
+    return round(sum(r["score"] for r in results) / len(results), 3)

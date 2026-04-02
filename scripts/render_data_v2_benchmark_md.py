@@ -15,7 +15,7 @@ Input spec:
 
 Output spec:
     Markdown file with two tables (numerical tasks vs MCQ), accuracies as percent with
-    three decimals. Missing cells use em dash. See file header for column semantics.
+    percents with one decimal (e.g. 54.0, 33.3). Missing cells use em dash.
     Also writes benchmark_tables.tsv (same directory as the .md unless --tsv-output is set):
     tab-separated, two blocks (numerical then MCQ) separated by a blank row—paste into Sheets/Excel.
 """
