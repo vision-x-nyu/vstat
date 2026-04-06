@@ -1,3 +1,3 @@
 task: longvid-reasoning-eval_v2_20sec_stretch_0p2s_hidden_dice_roll
-process_docs: !function utils.process_hidden_dice_roll_docs
+process_docs: !function lmms_eval.tasks.longvid_reasoning_eval_v2_task_utils.process_hidden_dice_roll_docs
 include: _default_template_yaml

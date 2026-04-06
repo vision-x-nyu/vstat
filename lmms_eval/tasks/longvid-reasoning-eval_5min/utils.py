@@ -27,10 +27,6 @@ BENCH_KEY = "5min"
 
 ROW_COLUMN_PATTERN = re.compile(r"row\s*(\d+)\s*[,;/]?\s*column\s*(\d+)", re.IGNORECASE)
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
-SUCCESS_AFTER_PATTERN = re.compile(r"(?:success|successful)[^0-9]*(\d+)", re.IGNORECASE)
-SUCCESS_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:success|successful)", re.IGNORECASE)
-FAILURE_AFTER_PATTERN = re.compile(r"(?:failure|unsuccessful)[^0-9]*(\d+)", re.IGNORECASE)
-FAILURE_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:failure|unsuccessful)", re.IGNORECASE)
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
 
 MCQ_TASKS = frozenset({
@@ -43,7 +39,7 @@ MCQ_TASKS = frozenset({
 TASK_INSTRUCTIONS = {
     "hidden_dice_roll": "Return only the final count as a single integer.\nAnswer:",
     "memory_sliding_puzzle": "",
-    "ring_toss_counting_physics": "Return only `Success: X, Failure: Y`.\nAnswer:",
+    "ring_toss_counting_physics": "Return only the number of successful tosses as a single integer.\nAnswer:",
     "tilt_box": "Return only the final corner number as a single integer from 1 to 4.\nAnswer:",
     "shell_game": "",
     "shell_game_rotate": "",
@@ -80,10 +76,8 @@ def _build_task_dataset(dataset, source_task):
             flat_doc["answer_text"] = str(answer)
         elif source_task == "ring_toss_counting_physics":
             success = int(answer["success"])
-            failure = int(answer["failure"])
-            flat_doc["target_success"] = success
-            flat_doc["target_failure"] = failure
-            flat_doc["answer_text"] = f"Success: {success}, Failure: {failure}"
+            flat_doc["target_value"] = success
+            flat_doc["answer_text"] = str(success)
         else:
             value = int(answer)
             flat_doc["target_value"] = value
@@ -147,27 +141,6 @@ def _extract_row_column(text):
     return int(match.group(1)), int(match.group(2))
 
 
-def _extract_keyword_integer(pattern, text):
-    match = pattern.search(str(text))
-    if match is None:
-        return None
-    groups = [g for g in match.groups() if g is not None]
-    return int(groups[0]) if groups else None
-
-
-def _extract_success_failure(text):
-    success = _extract_keyword_integer(SUCCESS_AFTER_PATTERN, text)
-    if success is None:
-        success = _extract_keyword_integer(SUCCESS_BEFORE_PATTERN, text)
-    failure = _extract_keyword_integer(FAILURE_AFTER_PATTERN, text)
-    if failure is None:
-        failure = _extract_keyword_integer(FAILURE_BEFORE_PATTERN, text)
-    if success is not None and failure is not None:
-        return success, failure
-    matches = [int(m) for m in INTEGER_PATTERN.findall(str(text))]
-    return tuple(matches[-2:]) if len(matches) >= 2 else None
-
-
 def _extract_mcq_letter(text):
     matches = MCQ_LETTER_PATTERN.findall(str(text).upper())
     return matches[-1] if matches else None
@@ -177,8 +150,6 @@ def _parse_prediction(doc, prediction):
     source_task = doc["source_task"]
     if doc["is_mcq"]:
         return _extract_mcq_letter(prediction)
-    if source_task == "ring_toss_counting_physics":
-        return _extract_success_failure(prediction)
     if source_task == "tilt_box":
         return _extract_last_integer(prediction, allowed_values={1, 2, 3, 4})
     return _extract_last_integer(prediction)
@@ -202,11 +173,6 @@ def _compute_score(doc, parsed):
         return 1.0 if correct else 0.0
     if parsed is None:
         return 0.0
-    if doc["source_task"] == "ring_toss_counting_physics":
-        pred_s, pred_f = parsed
-        mra_s = _mean_relative_accuracy(pred_s, doc["target_success"])
-        mra_f = _mean_relative_accuracy(pred_f, doc["target_failure"])
-        return (mra_s + mra_f) / 2.0
     return _mean_relative_accuracy(parsed, doc["target_value"])
 
 

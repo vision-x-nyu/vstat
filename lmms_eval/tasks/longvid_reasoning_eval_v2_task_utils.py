@@ -1,22 +1,4 @@
-"""Task helpers for longvid-reasoning-eval_v2_10sec_stretch_0p2s.
-
-Brief description:
-Load the nested VPI (data_v2) Blender QA JSON into lmms_eval subtasks and
-score exact-match accuracy. MCQ tasks compare predicted option letters; free-form
-tasks parse integers or success / failure pairs.
-
-Usage:
-Referenced by the YAML task configs in this directory via `!function`.
-
-Input spec:
-`/nas2/longvideo_eval/blender/data_v2/merged_qa/10sec_stretch_0p2s.json` with
-`data -> 10sec_stretch_0p2s -> <task_name> -> list[example]`.
-Run `export_merged_qa.py --data-dir .../blender/data_v2` to build this file.
-
-Output spec:
-Each subtask exposes flat documents with `video_path`, `question`,
-`answer_text`, `is_mcq`, `choices`. Mean `accuracy` is rounded to 3 decimals on [0, 1].
-"""
+"""longvid-reasoning-eval_v2_* shared helpers (YAML `!function lmms_eval.tasks....v2_task_utils.*`)."""
 
 import os
 import re
@@ -24,13 +6,8 @@ import re
 import numpy as np
 from datasets import Dataset
 
-BENCH_KEY = "10sec_stretch_0p2s"
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
-SUCCESS_AFTER_PATTERN = re.compile(r"(?:success|successful)[^0-9]*(\d+)", re.IGNORECASE)
-SUCCESS_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:success|successful)", re.IGNORECASE)
-FAILURE_AFTER_PATTERN = re.compile(r"(?:failure|unsuccessful)[^0-9]*(\d+)", re.IGNORECASE)
-FAILURE_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:failure|unsuccessful)", re.IGNORECASE)
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
 MCQ_TASKS = frozenset({
     "memory_sliding_puzzle",
@@ -42,22 +19,27 @@ MCQ_TASKS = frozenset({
 TASK_INSTRUCTIONS = {
     "hidden_dice_roll": "Return only the final count as a single integer.\nAnswer:",
     "memory_sliding_puzzle": "",
-    "ring_toss_counting_physics": "Return only `Success: X, Failure: Y`.\nAnswer:",
+    "ring_toss_counting_physics": "Return only the number of successful tosses as a single integer.\nAnswer:",
     "tilt_box": "",
     "shell_game": "",
     "shell_game_rotate": "",
     "opaque": "",
     "rhythm_game": "Return only the final count as a single integer.\nAnswer:",
-    "block_counting": "Return only the final count as a single integer.\nAnswer:",
-    "make_coffee": "Return only the final count as a single integer.\nAnswer:",
     "tighten_untighten": "Return only the final count as a single integer.\nAnswer:",
 }
 TILT_BOX_CHOICES = ["1", "2", "3", "4"]
 
 
-def _build_task_dataset(dataset, source_task):
+def _bench_key_from_dataset(dataset):
     assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = dataset[0]["data"][BENCH_KEY][source_task]
+    keys = list(dataset[0]["data"].keys())
+    assert len(keys) == 1, f"Expected one bench key under data, got {keys}"
+    return keys[0]
+
+
+def _build_task_dataset(dataset, source_task):
+    bench_key = _bench_key_from_dataset(dataset)
+    source_docs = dataset[0]["data"][bench_key][source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]
@@ -87,10 +69,8 @@ def _build_task_dataset(dataset, source_task):
             flat_doc["answer_text"] = str(answer).strip()
         elif source_task == "ring_toss_counting_physics":
             success = int(answer["success"])
-            failure = int(answer["failure"])
-            flat_doc["target_success"] = success
-            flat_doc["target_failure"] = failure
-            flat_doc["answer_text"] = f"Success: {success}, Failure: {failure}"
+            flat_doc["target_value"] = success
+            flat_doc["answer_text"] = str(success)
         else:
             value = int(answer)
             flat_doc["target_value"] = value
@@ -106,9 +86,7 @@ def _make_processor(source_task):
     return process_docs
 
 
-process_block_counting_docs = _make_processor("block_counting")
 process_hidden_dice_roll_docs = _make_processor("hidden_dice_roll")
-process_make_coffee_docs = _make_processor("make_coffee")
 process_memory_sliding_puzzle_docs = _make_processor("memory_sliding_puzzle")
 process_opaque_docs = _make_processor("opaque")
 process_rhythm_game_docs = _make_processor("rhythm_game")
@@ -128,12 +106,17 @@ def doc_to_visual(doc):
 def doc_to_text(doc, lmms_eval_specific_kwargs=None):
     kwargs = lmms_eval_specific_kwargs or {}
     pre_prompt = kwargs.get("pre_prompt", "")
-    post_prompt = kwargs.get("post_prompt", "")
+    if doc["is_mcq"]:
+        post_prompt = kwargs.get("mca_post_prompt", "")
+    else:
+        post_prompt = kwargs.get("na_post_prompt", "")
     instruction = TASK_INSTRUCTIONS.get(doc["source_task"], "")
-    body = f"Watch the full video carefully before answering.\n\nQuestion: {doc['question']}"
+    sections = [pre_prompt.strip(), "Watch the full video carefully before answering.", f"Question: {doc['question']}"]
     if instruction:
-        body += f"\n\n{instruction}"
-    return f"{pre_prompt}{body}{post_prompt}"
+        sections.append(instruction)
+    if post_prompt:
+        sections.append(post_prompt.strip())
+    return "\n\n".join(section for section in sections if section)
 
 
 def doc_to_target(doc):
@@ -166,27 +149,6 @@ def _extract_last_integer(text):
     return matches[-1] if matches else None
 
 
-def _extract_keyword_integer(pattern, text):
-    match = pattern.search(str(text))
-    if match is None:
-        return None
-    groups = [g for g in match.groups() if g is not None]
-    return int(groups[0]) if groups else None
-
-
-def _extract_success_failure(text):
-    success = _extract_keyword_integer(SUCCESS_AFTER_PATTERN, text)
-    if success is None:
-        success = _extract_keyword_integer(SUCCESS_BEFORE_PATTERN, text)
-    failure = _extract_keyword_integer(FAILURE_AFTER_PATTERN, text)
-    if failure is None:
-        failure = _extract_keyword_integer(FAILURE_BEFORE_PATTERN, text)
-    if success is not None and failure is not None:
-        return success, failure
-    matches = [int(m) for m in INTEGER_PATTERN.findall(str(text))]
-    return tuple(matches[-2:]) if len(matches) >= 2 else None
-
-
 def _extract_mcq_letter(text):
     matches = MCQ_LETTER_PATTERN.findall(str(text).upper())
     return matches[-1] if matches else None
@@ -195,8 +157,6 @@ def _extract_mcq_letter(text):
 def _parse_prediction(doc, prediction):
     if doc["is_mcq"]:
         return _extract_mcq_letter(prediction)
-    if doc["source_task"] == "ring_toss_counting_physics":
-        return _extract_success_failure(prediction)
     return _extract_last_integer(prediction)
 
 
@@ -218,21 +178,23 @@ def _compute_score(doc, parsed):
         return 1.0 if correct else 0.0
     if parsed is None:
         return 0.0
-    if doc["source_task"] == "ring_toss_counting_physics":
-        pred_s, pred_f = parsed
-        mra_s = _mean_relative_accuracy(pred_s, doc["target_success"])
-        mra_f = _mean_relative_accuracy(pred_f, doc["target_failure"])
-        return (mra_s + mra_f) / 2.0
     return _mean_relative_accuracy(parsed, doc["target_value"])
 
 
 def process_results(doc, results):
     prediction = str(results[0]).strip() if results else ""
     parsed = _parse_prediction(doc, prediction)
-    return {"accuracy": {"score": _compute_score(doc, parsed)}}
+    score = _compute_score(doc, parsed)
+    payload = {"accuracy": {"score": score}}
+    if not doc["is_mcq"]:
+        payload["mra"] = {"score": score}
+    return payload
 
 
 def aggregate_accuracy(results):
     if not results:
         return 0.0
     return round(sum(r["score"] for r in results) / len(results), 3)
+
+
+aggregate_mra = aggregate_accuracy

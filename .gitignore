@@ -53,6 +53,8 @@ wandb/
 zk.log
 span.log
 
+*.tsv
+
 # Data and models (large / local-only)
 data/
 pretrained/

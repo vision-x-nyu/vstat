@@ -1,3 +1,3 @@
 task: longvid-reasoning-eval_v2_20sec_shell_game_rotate
-process_docs: !function utils.process_shell_game_rotate_docs
+process_docs: !function lmms_eval.tasks.longvid_reasoning_eval_v2_task_utils.process_shell_game_rotate_docs
 include: _default_template_yaml
