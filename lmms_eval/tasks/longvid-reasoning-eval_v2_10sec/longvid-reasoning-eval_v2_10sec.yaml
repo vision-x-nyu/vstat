@@ -1,7 +1,6 @@
 group: longvid-reasoning-eval_v2_10sec
 task:
   - longvid-reasoning-eval_v2_10sec_block_counting
-  - longvid-reasoning-eval_v2_10sec_bulb
   - longvid-reasoning-eval_v2_10sec_hidden_dice_roll
   - longvid-reasoning-eval_v2_10sec_hockey_longest_game
   - longvid-reasoning-eval_v2_10sec_hockey_own_goal
