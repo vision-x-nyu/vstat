@@ -1,7 +1,10 @@
 group: longvid-reasoning-eval_v2_5sec
 task:
+  - longvid-reasoning-eval_v2_5sec_block_counting
   - longvid-reasoning-eval_v2_5sec_hidden_dice_roll
+  - longvid-reasoning-eval_v2_5sec_make_coffee
   - longvid-reasoning-eval_v2_5sec_memory_sliding_puzzle
+  - longvid-reasoning-eval_v2_5sec_morse
   - longvid-reasoning-eval_v2_5sec_rhythm_game
   - longvid-reasoning-eval_v2_5sec_ring_toss_counting_physics
   - longvid-reasoning-eval_v2_5sec_shell_game

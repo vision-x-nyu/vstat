@@ -17,6 +17,7 @@ fields, and either `accuracy` or `MRA:.5:.95:.05` metric payloads.
 Aggregated accuracy/MRA means use AGGREGATE_DECIMALS (3) on the [0, 1] scale.
 """
 
+import json
 import os
 import re
 
@@ -43,9 +44,20 @@ SUCCESS_AFTER_PATTERN = re.compile(r"(?:success|successful)[^0-9]*(\d+(?:\.\d+)?
 SUCCESS_BEFORE_PATTERN = re.compile(r"(\d+(?:\.\d+)?)[^0-9]{0,24}(?:success|successful)", re.IGNORECASE)
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-Z])\b")
 OPTION_LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+
+def merged_qa_data_tree(dataset):
+    assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
+    data = dataset[0]["data"]
+    if isinstance(data, str):
+        return json.loads(data)
+    return data
+
+
 def build_task_dataset(dataset, bench_key, source_task):
     assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = dataset[0]["data"][bench_key][source_task]
+    tree = merged_qa_data_tree(dataset)
+    source_docs = tree[bench_key][source_task]
     task_id = f"longvid-reasoning-eval_{bench_key}_{source_task}"
     flat_docs = []
     for doc in source_docs:

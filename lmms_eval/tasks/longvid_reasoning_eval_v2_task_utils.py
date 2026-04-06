@@ -1,10 +1,13 @@
 """longvid-reasoning-eval_v2_* shared helpers (YAML `!function lmms_eval.tasks....v2_task_utils.*`)."""
 
+import json
 import os
 import re
 
 import numpy as np
 from datasets import Dataset
+
+from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
 
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
@@ -17,8 +20,11 @@ MCQ_TASKS = frozenset({
     "tilt_box",
 })
 TASK_INSTRUCTIONS = {
+    "block_counting": "Return only the final count as a single integer.\nAnswer:",
     "hidden_dice_roll": "Return only the final count as a single integer.\nAnswer:",
+    "make_coffee": "Return only the final count as a single integer.\nAnswer:",
     "memory_sliding_puzzle": "",
+    "morse": "Return only the decoded message text exactly as specified in the question (no extra words or punctuation).\nAnswer:",
     "ring_toss_counting_physics": "Return only the number of successful tosses as a single integer.\nAnswer:",
     "tilt_box": "",
     "shell_game": "",
@@ -30,20 +36,31 @@ TASK_INSTRUCTIONS = {
 TILT_BOX_CHOICES = ["1", "2", "3", "4"]
 
 
-def _bench_key_from_dataset(dataset):
-    assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    keys = list(dataset[0]["data"].keys())
+def _decode_merged_json_field(raw):
+    if isinstance(raw, str):
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return raw
+    return raw
+
+
+def _parsed_bench_tree(dataset):
+    data = merged_qa_data_tree(dataset)
+    keys = list(data.keys())
     assert len(keys) == 1, f"Expected one bench key under data, got {keys}"
-    return keys[0]
+    return data, keys[0]
 
 
 def _build_task_dataset(dataset, source_task):
-    bench_key = _bench_key_from_dataset(dataset)
-    source_docs = dataset[0]["data"][bench_key][source_task]
+    row_data, bench_key = _parsed_bench_tree(dataset)
+    source_docs = row_data[bench_key][source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]
-        answer = doc["answer"]
+        answer = _decode_merged_json_field(doc["answer"])
+        choices = _decode_merged_json_field(doc.get("choices"))
+        answer_index = _decode_merged_json_field(doc.get("answer_index"))
         assert question is not None, f"Missing question for {source_task}"
         assert answer is not None, f"Missing answer for {source_task}"
         question_text = question.strip()
@@ -54,18 +71,20 @@ def _build_task_dataset(dataset, source_task):
             "video_path": doc["video_path"],
             "question": question_text,
             "is_mcq": is_mcq,
-            "choices": doc.get("choices"),
-            "answer_index": doc.get("answer_index"),
+            "choices": choices,
+            "answer_index": answer_index,
         }
         if source_task == "tilt_box":
-            choices = list(doc.get("choices") or TILT_BOX_CHOICES)
-            flat_doc["choices"] = choices
-            flat_doc["question"] = _ensure_mcq_question(question_text, choices)
-            flat_doc["answer_text"] = _resolve_tilt_box_answer(answer, doc.get("answer_index"))
+            choice_list = list(choices or TILT_BOX_CHOICES)
+            flat_doc["choices"] = choice_list
+            flat_doc["question"] = _ensure_mcq_question(question_text, choice_list)
+            flat_doc["answer_text"] = _resolve_tilt_box_answer(answer, answer_index)
         elif is_mcq:
-            choices = doc.get("choices")
             assert choices is not None, f"Missing choices for {source_task}/{doc['video_id']}"
             flat_doc["choices"] = choices
+            flat_doc["answer_text"] = str(answer).strip()
+        elif source_task == "morse":
+            flat_doc["exact_text_match"] = True
             flat_doc["answer_text"] = str(answer).strip()
         elif source_task == "ring_toss_counting_physics":
             success = int(answer["success"])
@@ -86,8 +105,11 @@ def _make_processor(source_task):
     return process_docs
 
 
+process_block_counting_docs = _make_processor("block_counting")
 process_hidden_dice_roll_docs = _make_processor("hidden_dice_roll")
+process_make_coffee_docs = _make_processor("make_coffee")
 process_memory_sliding_puzzle_docs = _make_processor("memory_sliding_puzzle")
+process_morse_docs = _make_processor("morse")
 process_opaque_docs = _make_processor("opaque")
 process_rhythm_game_docs = _make_processor("rhythm_game")
 process_ring_toss_counting_physics_docs = _make_processor("ring_toss_counting_physics")
@@ -108,6 +130,8 @@ def doc_to_text(doc, lmms_eval_specific_kwargs=None):
     pre_prompt = kwargs.get("pre_prompt", "")
     if doc["is_mcq"]:
         post_prompt = kwargs.get("mca_post_prompt", "")
+    elif doc.get("exact_text_match"):
+        post_prompt = kwargs.get("exact_text_post_prompt", "")
     else:
         post_prompt = kwargs.get("na_post_prompt", "")
     instruction = TASK_INSTRUCTIONS.get(doc["source_task"], "")
@@ -157,6 +181,8 @@ def _extract_mcq_letter(text):
 def _parse_prediction(doc, prediction):
     if doc["is_mcq"]:
         return _extract_mcq_letter(prediction)
+    if doc.get("exact_text_match"):
+        return str(prediction).strip()
     return _extract_last_integer(prediction)
 
 
@@ -176,6 +202,8 @@ def _compute_score(doc, parsed):
     if doc["is_mcq"]:
         correct = parsed is not None and parsed == doc["answer_text"]
         return 1.0 if correct else 0.0
+    if doc.get("exact_text_match"):
+        return 1.0 if parsed == doc["answer_text"] else 0.0
     if parsed is None:
         return 0.0
     return _mean_relative_accuracy(parsed, doc["target_value"])
@@ -186,7 +214,7 @@ def process_results(doc, results):
     parsed = _parse_prediction(doc, prediction)
     score = _compute_score(doc, parsed)
     payload = {"accuracy": {"score": score}}
-    if not doc["is_mcq"]:
+    if not doc["is_mcq"] and not doc.get("exact_text_match"):
         payload["mra"] = {"score": score}
     return payload
 

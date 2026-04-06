@@ -5,22 +5,44 @@ from __future__ import annotations
 import re
 
 NUMERIC_TASKS = (
-    "hidden_dice_roll",
-    "rhythm_game",
+    "block_counting",
+    "make_coffee",
     "ring_toss_counting_physics",
     "tighten_untighten",
+    "hidden_dice_roll",
+    "rhythm_game",
+    "sugar_new",
+    "air_hockey",
 )
-MCQ_TABLE_ORDER = ("shell_game", "shell_game_rotate", "memory_sliding_puzzle", "tilt_box")
+
+MCQ_TABLE_COLUMNS: tuple[tuple[str, str], ...] = (
+    ("shell_game", "shell_game"),
+    ("shell_game_rotate", "shell_game_rotate"),
+    ("shuffle_puzzle", "memory_sliding_puzzle"),
+    ("tilt", "tilt_box"),
+    ("morse", "morse"),
+    ("air_hockey", "air_hockey"),
+    ("air_hockey", "air_hockey"),
+    ("pinwheel", "pinwheel"),
+    ("opaque", "opaque"),
+)
 
 TASK_DISPLAY = {
-    "hidden_dice_roll": "Dice Roll",
-    "rhythm_game": "Rhythm",
-    "ring_toss_counting_physics": "Ring toss",
-    "tighten_untighten": "tighten/loosen",
-    "shell_game": "Shell Game",
-    "shell_game_rotate": "Shell Game (rotate)",
-    "memory_sliding_puzzle": "Slide Puzzle",
-    "tilt_box": "Tilt Box",
+    "block_counting": "block_counting",
+    "make_coffee": "make_coffee",
+    "ring_toss_counting_physics": "ring",
+    "tighten_untighten": "tighten_untighten",
+    "hidden_dice_roll": "dice",
+    "rhythm_game": "rhythm_game",
+    "sugar_new": "sugar_new",
+    "air_hockey": "air_hockey",
+    "shell_game": "shell_game",
+    "shell_game_rotate": "shell_game_rotate",
+    "memory_sliding_puzzle": "shuffle_puzzle",
+    "tilt_box": "tilt",
+    "morse": "morse",
+    "pinwheel": "pinwheel",
+    "opaque": "opaque",
 }
 
 MODEL_ORDER = (
@@ -51,7 +73,10 @@ MODEL_LABEL = {
 
 DURATIONS = ("5sec", "10sec", "20sec")
 
-TASK_IDS_BY_SUFFIX = tuple(sorted(NUMERIC_TASKS + MCQ_TABLE_ORDER, key=len, reverse=True))
+_MCQ_JSON_KEYS = tuple({jk for _, jk in MCQ_TABLE_COLUMNS})
+TASK_IDS_BY_SUFFIX = tuple(
+    sorted(set(NUMERIC_TASKS) | set(_MCQ_JSON_KEYS), key=len, reverse=True)
+)
 
 STRETCH_RE = re.compile(r"stretch")
 RUN_TS = re.compile(r"^\d{8}_\d{6}$")

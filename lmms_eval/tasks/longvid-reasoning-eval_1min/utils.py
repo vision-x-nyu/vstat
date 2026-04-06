@@ -23,6 +23,8 @@ import re
 import numpy as np
 from datasets import Dataset
 
+from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
+
 BENCH_KEY = "1min"
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
@@ -52,7 +54,7 @@ TILT_BOX_CHOICES = ["1", "2", "3", "4"]
 
 def _build_task_dataset(dataset, source_task):
     assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = dataset[0]["data"][BENCH_KEY][source_task]
+    source_docs = merged_qa_data_tree(dataset)[BENCH_KEY][source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]

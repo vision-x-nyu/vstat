@@ -14,8 +14,8 @@ Input spec:
     longvid-reasoning-eval_v2_20sec_hidden_dice_roll and metric accuracy,none (float).
 
 Output spec:
-    Markdown file with two tables (numerical tasks vs MCQ), accuracies as percent with
-    percents with one decimal (e.g. 54.0, 33.3). Missing cells use em dash.
+    Markdown file with two tables (numerical then MCQ), fixed column order per constants;
+    accuracies as percent with one decimal (e.g. 54.0, 33.3). Missing cells use em dash.
     Also writes benchmark_tables.tsv (same directory as the .md unless --tsv-output is set):
     tab-separated, two blocks (numerical then MCQ) separated by a blank row—paste into Sheets/Excel.
 """

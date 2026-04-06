@@ -6,7 +6,7 @@ from pathlib import Path
 
 from data_v2_benchmark_constants import (
     DURATIONS,
-    MCQ_TABLE_ORDER,
+    MCQ_TABLE_COLUMNS,
     MODEL_LABEL,
     MODEL_ORDER,
     NUMERIC_TASKS,
@@ -58,19 +58,19 @@ def render_tsv(root: Path, include_stretch: bool) -> str:
     lines.append("")
 
     header = ["Group", "Model"]
-    for tid in MCQ_TABLE_ORDER:
-        name = TASK_DISPLAY[tid]
+    for disp, jk in MCQ_TABLE_COLUMNS:
+        name = TASK_DISPLAY.get(jk, disp)
         header.extend([f"{name} 5s", f"{name} 10s", f"{name} 20s", f"{name} 1m"])
     lines.append(_row(header))
 
     cells = ["Uniform", "Chance level (Random)"]
-    for tid in MCQ_TABLE_ORDER:
-        c = random_chance_mcq(tid)
+    for _disp, jk in MCQ_TABLE_COLUMNS:
+        c = random_chance_mcq(jk)
         cells.extend([c, c, c, "—"])
     lines.append(_row(cells))
 
     cells = ["Uniform", "Chance level (Frequency)"]
-    for _ in MCQ_TABLE_ORDER:
+    for _ in MCQ_TABLE_COLUMNS:
         cells.extend(["—", "—", "—", "—"])
     lines.append(_row(cells))
 
@@ -78,9 +78,9 @@ def render_tsv(root: Path, include_stretch: bool) -> str:
         if mk not in matrix:
             continue
         cells = ["Open-source", MODEL_LABEL[mk]]
-        for tid in MCQ_TABLE_ORDER:
+        for _disp, jk in MCQ_TABLE_COLUMNS:
             for d in DURATIONS:
-                cells.append(fmt_pct(matrix[mk][tid].get(d)))
+                cells.append(fmt_pct(matrix[mk][jk].get(d)))
             cells.append("—")
         lines.append(_row(cells))
 

@@ -899,6 +899,15 @@ def import_function(loader, node):
     if isinstance(module_name, list):
         module_name = ".".join(module_name)
 
+    # Prefer package imports for dotted module paths (e.g. lmms_eval.tasks.foo) so we never
+    # treat them as a literal `lmms_eval.tasks.foo.py` next to the YAML file.
+    if "." in module_name:
+        try:
+            module = importlib.import_module(module_name)
+            return getattr(module, function_name)
+        except Exception:
+            pass
+
     # 1) Try relative file import (original behavior)
     module_path = os.path.normpath(os.path.join(yaml_path, "{}.py".format(module_name)))
     if os.path.exists(module_path):

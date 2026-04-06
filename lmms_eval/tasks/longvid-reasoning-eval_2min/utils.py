@@ -22,6 +22,8 @@ import re
 
 from datasets import Dataset
 
+from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
+
 BENCH_KEY = "2min"
 
 ROW_COLUMN_PATTERN = re.compile(r"row\s*(\d+)\s*[,;/]?\s*column\s*(\d+)", re.IGNORECASE)
@@ -52,7 +54,7 @@ TASK_INSTRUCTIONS = {
 
 def _build_task_dataset(dataset, source_task):
     assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = dataset[0]["data"][BENCH_KEY][source_task]
+    source_docs = merged_qa_data_tree(dataset)[BENCH_KEY][source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]

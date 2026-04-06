@@ -14,10 +14,8 @@ from pathlib import Path
 from data_v2_benchmark_constants import (
     DURATIONS,
     LMMS_RUN,
-    MCQ_TABLE_ORDER,
     RUN_TS,
     STRETCH_RE,
-    TASK_DISPLAY,
     TASK_IDS_BY_SUFFIX,
 )
 
@@ -120,18 +118,16 @@ def fmt_pct(value: float | None) -> str:
     return f"{round(float(value) * 100.0, 1):.1f}"
 
 
-def random_chance_mcq(task_id: str) -> str:
-    assert task_id in MCQ_TABLE_ORDER
-    if task_id in ("shell_game", "shell_game_rotate"):
+def random_chance_mcq(json_key: str) -> str:
+    if json_key in ("shell_game", "shell_game_rotate"):
         return f"{round(100.0 / 3.0, 1):.1f}"
     return f"{25.0:.1f}"
 
 
-def table_header_task_blocks(task_ids: tuple[str, ...], cells_per_task: int) -> tuple[str, str]:
+def table_header_task_blocks(labels: tuple[str, ...], cells_per_task: int) -> tuple[str, str]:
     h1 = "| Group | Model |"
     sep = "| --- | --- |"
-    for tid in task_ids:
-        title = TASK_DISPLAY[tid]
+    for title in labels:
         h1 += f" {title} |" + " |" * (cells_per_task - 1)
         sep += (" --- |" * cells_per_task)
     return h1, sep
