@@ -1,4 +1,21 @@
-"""longvid-reasoning-eval_v2_* shared helpers (YAML `!function lmms_eval.tasks....v2_task_utils.*`)."""
+"""longvid-reasoning-eval_v2_* shared helpers.
+
+Brief description:
+Build flat docs for v2 Blender QA benchmarks and score MCQ tasks with
+accuracy while scoring numeric tasks with MRA.
+
+Usage:
+Imported (via shim utils.py) by YAML configs in longvid-reasoning-eval_v2_*.
+
+Input spec:
+Merged JSON with top-level keys {dataset_name, version, video_root, data}.
+``data`` is a dict mapping task names to QA lists.  Each QA has
+{question, answer, choices, answer_index, video_id, video_path}.
+
+Output spec:
+Flat docs with source_task, video_id, video_path, prompt fields, and
+either ``accuracy`` or ``mra`` metric payloads.
+"""
 
 import json
 import os
@@ -12,27 +29,39 @@ from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
+
 MCQ_TASKS = frozenset({
+    "bulb",
+    "hockey_longest_game",
+    "hockey_score",
     "memory_sliding_puzzle",
+    "morse",
     "opaque",
     "shell_game",
     "shell_game_rotate",
     "tilt_box",
 })
+
 TASK_INSTRUCTIONS = {
     "block_counting": "Return only the final count as a single integer.\nAnswer:",
+    "bulb": "",
     "hidden_dice_roll": "Return only the final count as a single integer.\nAnswer:",
+    "hockey_longest_game": "",
+    "hockey_own_goal": "Return only the final count as a single integer.\nAnswer:",
+    "hockey_score": "",
     "make_coffee": "Return only the final count as a single integer.\nAnswer:",
     "memory_sliding_puzzle": "",
-    "morse": "Return only the decoded message text exactly as specified in the question (no extra words or punctuation).\nAnswer:",
-    "ring_toss_counting_physics": "Return only the number of successful tosses as a single integer.\nAnswer:",
-    "tilt_box": "",
-    "shell_game": "",
-    "shell_game_rotate": "",
+    "morse": "",
     "opaque": "",
     "rhythm_game": "Return only the final count as a single integer.\nAnswer:",
+    "ring_toss": "Return only the number of successful tosses as a single integer.\nAnswer:",
+    "shell_game": "",
+    "shell_game_rotate": "",
+    "sugar_new": "Return only the final count as a single integer.\nAnswer:",
     "tighten_untighten": "Return only the final count as a single integer.\nAnswer:",
+    "tilt_box": "",
 }
+
 TILT_BOX_CHOICES = ["1", "2", "3", "4"]
 
 
@@ -45,16 +74,22 @@ def _decode_merged_json_field(raw):
     return raw
 
 
-def _parsed_bench_tree(dataset):
+def _get_task_dict(dataset):
+    """Return the {task_name: [docs]} dict from the merged QA dataset.
+
+    Handles both flat layout (task names directly under ``data``) and
+    nested layout (a single bench key wrapping all tasks).
+    """
     data = merged_qa_data_tree(dataset)
     keys = list(data.keys())
-    assert len(keys) == 1, f"Expected one bench key under data, got {keys}"
-    return data, keys[0]
+    if len(keys) == 1 and isinstance(data[keys[0]], dict):
+        return data[keys[0]]
+    return data
 
 
 def _build_task_dataset(dataset, source_task):
-    row_data, bench_key = _parsed_bench_tree(dataset)
-    source_docs = row_data[bench_key][source_task]
+    tasks = _get_task_dict(dataset)
+    source_docs = tasks[source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]
@@ -79,17 +114,16 @@ def _build_task_dataset(dataset, source_task):
             flat_doc["choices"] = choice_list
             flat_doc["question"] = _ensure_mcq_question(question_text, choice_list)
             flat_doc["answer_text"] = _resolve_tilt_box_answer(answer, answer_index)
+        elif source_task == "morse":
+            assert choices is not None, f"Missing choices for morse/{doc['video_id']}"
+            flat_doc["choices"] = choices
+            flat_doc["question"] = _ensure_mcq_question(question_text, choices)
+            idx = int(answer_index) if answer_index is not None else int(answer) - 1
+            flat_doc["answer_text"] = OPTION_LETTERS[idx]
         elif is_mcq:
             assert choices is not None, f"Missing choices for {source_task}/{doc['video_id']}"
             flat_doc["choices"] = choices
             flat_doc["answer_text"] = str(answer).strip()
-        elif source_task == "morse":
-            flat_doc["exact_text_match"] = True
-            flat_doc["answer_text"] = str(answer).strip()
-        elif source_task == "ring_toss_counting_physics":
-            success = int(answer["success"])
-            flat_doc["target_value"] = success
-            flat_doc["answer_text"] = str(success)
         else:
             value = int(answer)
             flat_doc["target_value"] = value
@@ -106,15 +140,20 @@ def _make_processor(source_task):
 
 
 process_block_counting_docs = _make_processor("block_counting")
+process_bulb_docs = _make_processor("bulb")
 process_hidden_dice_roll_docs = _make_processor("hidden_dice_roll")
+process_hockey_longest_game_docs = _make_processor("hockey_longest_game")
+process_hockey_own_goal_docs = _make_processor("hockey_own_goal")
+process_hockey_score_docs = _make_processor("hockey_score")
 process_make_coffee_docs = _make_processor("make_coffee")
 process_memory_sliding_puzzle_docs = _make_processor("memory_sliding_puzzle")
 process_morse_docs = _make_processor("morse")
 process_opaque_docs = _make_processor("opaque")
 process_rhythm_game_docs = _make_processor("rhythm_game")
-process_ring_toss_counting_physics_docs = _make_processor("ring_toss_counting_physics")
+process_ring_toss_docs = _make_processor("ring_toss")
 process_shell_game_docs = _make_processor("shell_game")
 process_shell_game_rotate_docs = _make_processor("shell_game_rotate")
+process_sugar_new_docs = _make_processor("sugar_new")
 process_tighten_untighten_docs = _make_processor("tighten_untighten")
 process_tilt_box_docs = _make_processor("tilt_box")
 
@@ -130,8 +169,6 @@ def doc_to_text(doc, lmms_eval_specific_kwargs=None):
     pre_prompt = kwargs.get("pre_prompt", "")
     if doc["is_mcq"]:
         post_prompt = kwargs.get("mca_post_prompt", "")
-    elif doc.get("exact_text_match"):
-        post_prompt = kwargs.get("exact_text_post_prompt", "")
     else:
         post_prompt = kwargs.get("na_post_prompt", "")
     instruction = TASK_INSTRUCTIONS.get(doc["source_task"], "")
@@ -181,8 +218,6 @@ def _extract_mcq_letter(text):
 def _parse_prediction(doc, prediction):
     if doc["is_mcq"]:
         return _extract_mcq_letter(prediction)
-    if doc.get("exact_text_match"):
-        return str(prediction).strip()
     return _extract_last_integer(prediction)
 
 
@@ -202,8 +237,6 @@ def _compute_score(doc, parsed):
     if doc["is_mcq"]:
         correct = parsed is not None and parsed == doc["answer_text"]
         return 1.0 if correct else 0.0
-    if doc.get("exact_text_match"):
-        return 1.0 if parsed == doc["answer_text"] else 0.0
     if parsed is None:
         return 0.0
     return _mean_relative_accuracy(parsed, doc["target_value"])
@@ -214,7 +247,7 @@ def process_results(doc, results):
     parsed = _parse_prediction(doc, prediction)
     score = _compute_score(doc, parsed)
     payload = {"accuracy": {"score": score}}
-    if not doc["is_mcq"] and not doc.get("exact_text_match"):
+    if not doc["is_mcq"]:
         payload["mra"] = {"score": score}
     return payload
 

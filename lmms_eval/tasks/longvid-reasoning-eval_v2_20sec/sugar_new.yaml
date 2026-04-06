@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_v2_20sec_sugar_new
+process_docs: !function utils.process_sugar_new_docs
+include: _default_template_yaml
