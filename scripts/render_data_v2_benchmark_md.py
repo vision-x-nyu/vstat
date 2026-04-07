@@ -5,6 +5,10 @@ Usage:
         --data-v2-root results/data_v2 \\
         --output results/data_v2/benchmark_tables.md
 
+    Relative --data-v2-root is resolved against the current working directory first;
+    if that path is not a directory, the same relative path under this repo
+    (parent of scripts/) is tried so runs from a workspace root still work.
+
 Input spec:
     Recursive *results.json files:
         - .../results.json (lmms-eval layout)
@@ -26,6 +30,8 @@ import argparse
 import sys
 from pathlib import Path
 
+sys.dont_write_bytecode = True
+
 _SCRIPTS_DIR = Path(__file__).resolve().parent
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
@@ -34,13 +40,35 @@ from data_v2_benchmark_render import render_markdown
 from data_v2_benchmark_tsv import render_tsv
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parent.parent
+
+
+def _resolve_data_v2_root(arg: Path) -> Path:
+    p = arg.expanduser()
+    if p.is_absolute():
+        out = p.resolve()
+        assert out.is_dir(), f"not a directory: {out}"
+        return out
+    cwd_guess = (Path.cwd() / p).resolve()
+    repo_guess = (_repo_root() / p).resolve()
+    if cwd_guess.is_dir():
+        return cwd_guess
+    if repo_guess.is_dir():
+        return repo_guess
+    assert False, (
+        "not a directory: tried "
+        f"{cwd_guess} (cwd-relative) and {repo_guess} (repo-relative to {_repo_root()})"
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Render data_v2 benchmark markdown tables")
     parser.add_argument(
         "--data-v2-root",
         type=Path,
-        default=Path(__file__).resolve().parent.parent / "results" / "data_v2",
-        help="Directory containing per-model result trees",
+        default=_repo_root() / "results" / "data_v2",
+        help="Directory containing per-model result trees (relative paths: try cwd, then repo root)",
     )
     parser.add_argument(
         "--output",
@@ -65,8 +93,7 @@ def main() -> None:
         help="Do not write the TSV file",
     )
     args = parser.parse_args()
-    root = args.data_v2_root.resolve()
-    assert root.is_dir(), f"not a directory: {root}"
+    root = _resolve_data_v2_root(args.data_v2_root)
     out = args.output if args.output is not None else root / "benchmark_tables.md"
     out.parent.mkdir(parents=True, exist_ok=True)
     text = render_markdown(root, include_stretch=args.include_stretch)

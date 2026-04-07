@@ -122,12 +122,3 @@ def random_chance_mcq(json_key: str) -> str:
     if json_key in ("shell_game", "shell_game_rotate"):
         return f"{round(100.0 / 3.0, 1):.1f}"
     return f"{25.0:.1f}"
-
-
-def table_header_task_blocks(labels: tuple[str, ...], cells_per_task: int) -> tuple[str, str]:
-    h1 = "| Group | Model |"
-    sep = "| --- | --- |"
-    for title in labels:
-        h1 += f" {title} |" + " |" * (cells_per_task - 1)
-        sep += (" --- |" * cells_per_task)
-    return h1, sep

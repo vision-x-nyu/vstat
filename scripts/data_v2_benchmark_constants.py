@@ -1,4 +1,9 @@
-"""Constants for data_v2 benchmark markdown rendering."""
+"""Constants for data_v2 benchmark rendering.
+
+Matches the reference Google Sheet layout:
+  - Numerical table: Easy(5s) / Med(10s) / Hard(20s) / Chall(1min)
+  - MCQ table: 5sec / 10sec / 20sec / 1min
+"""
 
 from __future__ import annotations
 
@@ -7,43 +12,36 @@ import re
 NUMERIC_TASKS = (
     "block_counting",
     "make_coffee",
-    "ring_toss_counting_physics",
+    "ring_toss",
     "tighten_untighten",
     "hidden_dice_roll",
     "rhythm_game",
     "sugar_new",
-    "air_hockey",
+    "hockey_own_goal",
 )
+
+NUMERIC_DISPLAY = {
+    "block_counting": "Block Count",
+    "make_coffee": "Make coffee",
+    "ring_toss": "Ring toss",
+    "tighten_untighten": "tighten/loosen",
+    "hidden_dice_roll": "Dice Roll",
+    "rhythm_game": "Rhythm",
+    "sugar_new": "Sugar (new)",
+    "hockey_own_goal": "Hockey (own goal)",
+}
 
 MCQ_TABLE_COLUMNS: tuple[tuple[str, str], ...] = (
-    ("shell_game", "shell_game"),
-    ("shell_game_rotate", "shell_game_rotate"),
-    ("shuffle_puzzle", "memory_sliding_puzzle"),
-    ("tilt", "tilt_box"),
-    ("morse", "morse"),
-    ("air_hockey", "air_hockey"),
-    ("air_hockey", "air_hockey"),
-    ("pinwheel", "pinwheel"),
-    ("opaque", "opaque"),
+    ("Shell Game", "shell_game"),
+    ("Shell Game (rotate)", "shell_game_rotate"),
+    ("Slide Puzzle", "memory_sliding_puzzle"),
+    ("Tilt Box", "tilt_box"),
+    ("Morse Code", "morse"),
+    ("Hockey (score)", "hockey_score"),
+    ("Hockey (longest)", "hockey_longest_game"),
+    ("Pinwheel", "pinwheel"),
+    ("Opaque", "opaque"),
 )
-
-TASK_DISPLAY = {
-    "block_counting": "block_counting",
-    "make_coffee": "make_coffee",
-    "ring_toss_counting_physics": "ring",
-    "tighten_untighten": "tighten_untighten",
-    "hidden_dice_roll": "dice",
-    "rhythm_game": "rhythm_game",
-    "sugar_new": "sugar_new",
-    "air_hockey": "air_hockey",
-    "shell_game": "shell_game",
-    "shell_game_rotate": "shell_game_rotate",
-    "memory_sliding_puzzle": "shuffle_puzzle",
-    "tilt_box": "tilt",
-    "morse": "morse",
-    "pinwheel": "pinwheel",
-    "opaque": "opaque",
-}
 
 MODEL_ORDER = (
     "internvl3p5_8b",
@@ -67,11 +65,13 @@ MODEL_LABEL = {
     "cambrians_7b": "Cambrian-S-7B",
     "cambrians_3b": "Cambrian-S-3B",
     "cambrians_1p5b": "Cambrian-S-1.5B",
-    "llava_onevision_7b": "LLaVA-OneVision-7B",
-    "llava_onevision_0.5b": "LLaVA-OneVision-0.5B",
+    "llava_onevision_7b": "LLaVA-OV-7B",
+    "llava_onevision_0.5b": "LLaVA-OV-0.5B",
 }
 
 DURATIONS = ("5sec", "10sec", "20sec")
+NUM_DUR_LABELS = ("Easy", "Med", "Hard", "Chall")
+MCQ_DUR_LABELS = ("5sec", "10sec", "20sec", "1min")
 
 _MCQ_JSON_KEYS = tuple({jk for _, jk in MCQ_TABLE_COLUMNS})
 TASK_IDS_BY_SUFFIX = tuple(
