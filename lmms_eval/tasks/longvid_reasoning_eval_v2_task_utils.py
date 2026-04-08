@@ -24,8 +24,6 @@ import re
 import numpy as np
 from datasets import Dataset
 
-from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
-
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
@@ -63,6 +61,16 @@ TASK_INSTRUCTIONS = {
 }
 
 TILT_BOX_CHOICES = ["1", "2", "3", "4"]
+
+
+
+def merged_qa_data_tree(dataset):
+    assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
+    data = dataset[0]["data"]
+    if isinstance(data, str):
+        return json.loads(data)
+    return data
+
 
 
 def _decode_merged_json_field(raw):
