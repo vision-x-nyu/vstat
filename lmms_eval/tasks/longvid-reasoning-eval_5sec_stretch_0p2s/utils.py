@@ -106,7 +106,7 @@ process_hockey_own_goal_docs = _make_processor("hockey_own_goal")
 process_hockey_score_docs = _make_processor("hockey_score")
 
 
-DATA_ROOT      = "/Users/sihyun/Desktop/Research/projects/NYU/data"
+DATA_ROOT      = "/nas2/benchmarks/vpi/blender"
 _OLD_DATA_ROOT = "/nas2/longvideo_eval/blender/data"
 
 

@@ -104,7 +104,7 @@ process_hockey_score_docs = _make_processor("hockey_score")
 process_hockey_longest_game_docs = _make_processor("hockey_longest_game")
 
 
-DATA_ROOT      = "/Users/sihyun/Desktop/Research/projects/NYU/data"
+DATA_ROOT      = "/nas2/benchmarks/vpi/blender"
 _OLD_DATA_ROOT = "/nas2/longvideo_eval/blender/data"
 
 
