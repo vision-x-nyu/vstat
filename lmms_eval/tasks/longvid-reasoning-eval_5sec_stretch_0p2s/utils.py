@@ -125,10 +125,16 @@ def doc_to_text(doc, lmms_eval_specific_kwargs=None):
     kwargs = lmms_eval_specific_kwargs or {}
     pre_prompt = kwargs.get("pre_prompt", "")
     post_prompt = kwargs.get("post_prompt", "")
-    instruction = TASK_INSTRUCTIONS.get(doc["source_task"], "")
     body = f"Watch the full video carefully before answering.\n\nQuestion: {doc['question']}"
-    if instruction:
-        body += f"\n\n{instruction}"
+    if doc["is_mcq"]:
+        if doc["source_task"] in MCQ_NUMBER_TASKS:
+            body += "\n\nPlease answer with the number (1, 2, 3, or 4)."
+        else:
+            body += "\n\nPlease answer with the letter (A, B, C, or D)."
+    else:
+        instruction = TASK_INSTRUCTIONS.get(doc["source_task"], "")
+        if instruction:
+            body += f"\n\n{instruction}"
     return f"{pre_prompt}{body}{post_prompt}"
 
 

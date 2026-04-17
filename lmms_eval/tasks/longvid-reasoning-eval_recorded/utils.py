@@ -108,12 +108,23 @@ def doc_to_visual(doc):
     return [video_path]
 
 
+def _mcq_instruction(n_choices):
+    letters = "ABCD"[:n_choices]
+    if len(letters) < 2:
+        return ""
+    return f"Please answer with the letter ({', '.join(letters[:-1])}, or {letters[-1]})."
+
+
 def doc_to_text(doc, lmms_eval_specific_kwargs=None):
     kwargs = lmms_eval_specific_kwargs or {}
     pre_prompt = kwargs.get("pre_prompt", "")
     post_prompt = kwargs.get("post_prompt", "")
     body = f"Watch the full video carefully before answering.\n\nQuestion: {doc['question']}"
-    if not doc["is_mcq"]:
+    if doc["is_mcq"]:
+        instruction = _mcq_instruction(len(doc["choices"]))
+        if instruction:
+            body += f"\n\n{instruction}"
+    else:
         instruction = NUMERICAL_INSTRUCTIONS.get(doc["source_task"])
         if instruction:
             body += f"\n\n{instruction}"
