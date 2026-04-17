@@ -577,6 +577,23 @@ Use the BibTeX entries below, or click the "Cite this repository" button in the 
 
 </details>
 
+## Benchmark Data Preparation
+
+### Stretch videos
+
+Re-encode videos so every original frame is held on screen for a fixed duration (produces the `_stretch_0p2s` variants used by
+`longvid-reasoning-eval_*_stretch_0p2s` task groups).
+
+```bash
+python stretch_videos_one_frame_per_second.py \
+    --input_dir "$in_dir" \
+    --output_dir "$out_dir" \
+    --recursive \
+    --keep_name \
+    --hold_seconds 0.2 \
+    --overwrite
+```
+
 ## Acknowledgement
 
 lmms_eval is a fork of [lm-eval-harness](https://github.com/EleutherAI/lm-evaluation-harness). We recommend you to read through the [docs of lm-eval-harness](https://github.com/EleutherAI/lm-evaluation-harness/tree/main/docs) for relevant information.
