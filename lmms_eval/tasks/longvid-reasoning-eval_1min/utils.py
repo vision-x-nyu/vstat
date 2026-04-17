@@ -22,9 +22,6 @@ import re
 
 from datasets import Dataset
 
-from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
-
-BENCH_KEY = "1min"
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")

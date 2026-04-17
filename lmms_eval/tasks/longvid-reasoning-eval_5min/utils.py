@@ -22,9 +22,6 @@ import re
 
 from datasets import Dataset
 
-from lmms_eval.tasks.longvid_reasoning_eval_utils import merged_qa_data_tree
-
-BENCH_KEY = "5min"
 
 ROW_COLUMN_PATTERN = re.compile(r"row\s*(\d+)\s*[,;/]?\s*column\s*(\d+)", re.IGNORECASE)
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
