@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_20sec_hockey_own_goal
+process_docs: !function utils.process_hockey_own_goal_docs
+include: _default_template_yaml
