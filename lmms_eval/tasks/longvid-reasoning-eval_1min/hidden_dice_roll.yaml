@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_1min_hidden_dice_roll
-process_docs: !function utils.process_hidden_dice_roll_docs
-include: _default_template_yaml
