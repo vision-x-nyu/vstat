@@ -9,7 +9,7 @@ Usage:
 Referenced by the YAML task configs in this directory via `!function`.
 
 Input spec:
-`/Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/2min.json` with
+`/nas2/benchmarks/vpi/blender/merged_qa/2min.json` with
 `data -> 2min -> <task_name> -> list[example]`.
 
 Output spec:
@@ -104,7 +104,7 @@ def process_tilt_box_docs(dataset):
     return _build_task_dataset(dataset, "tilt_box")
 
 
-DATA_ROOT = "/Users/sihyun/Desktop/Research/projects/NYU/data"
+DATA_ROOT = "/nas2/benchmarks/vpi/blender"
 _OLD_DATA_ROOT = "/nas2/longvideo_eval/blender/data"
 
 

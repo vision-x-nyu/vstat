@@ -1,7 +1,7 @@
 dataset_path: json
 dataset_kwargs:
   data_files:
-    test: /Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/1min.json
+    test: /nas2/benchmarks/vpi/blender/merged_qa/1min.json
 task: longvid-reasoning-eval_1min
 test_split: test
 output_type: generate_until

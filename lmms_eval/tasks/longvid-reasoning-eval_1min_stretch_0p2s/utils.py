@@ -9,7 +9,7 @@ Usage:
 Referenced by the YAML task configs in this directory via `!function`.
 
 Input spec:
-`/Users/sihyun/Desktop/Research/projects/NYU/data/merged_qa/1min_stretch_0p2s.json` with
+`/nas2/benchmarks/vpi/blender/merged_qa/1min_stretch_0p2s.json` with
 `data -> 1min -> <task_name> -> list[example]`.
 
 Output spec:
@@ -111,7 +111,7 @@ process_tilt_box_docs = _make_processor("tilt_box")
 process_ring_toss_docs = _make_processor("ring_toss")
 
 
-DATA_ROOT = "/Users/sihyun/Desktop/Research/projects/NYU/data"
+DATA_ROOT = "/nas2/benchmarks/vpi/blender"
 _OLD_DATA_ROOT = "/nas2/longvideo_eval/blender/data"
 
 
