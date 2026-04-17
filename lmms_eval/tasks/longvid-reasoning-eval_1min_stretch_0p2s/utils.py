@@ -40,7 +40,7 @@ MCQ_TASKS = frozenset({
 TASK_INSTRUCTIONS = {
     "hidden_dice_roll": "Return only the final count as a single integer.\nAnswer:",
     "memory_sliding_puzzle": "",
-    "ring_toss_counting_physics": "Return only `Success: X, Failure: Y`.\nAnswer:",
+    "ring_toss": "Return only the final count as a single integer.\nAnswer:",
     "tilt_box": "",
     "shell_game": "",
     "shell_game_rotate": "",
@@ -55,7 +55,7 @@ TILT_BOX_CHOICES = ["1", "2", "3", "4"]
 
 def _build_task_dataset(dataset, source_task):
     assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = dataset[0]["data"][BENCH_KEY][source_task]
+    source_docs = dataset[0]["data"][source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]
@@ -83,12 +83,6 @@ def _build_task_dataset(dataset, source_task):
             assert choices is not None, f"Missing choices for {source_task}/{doc['video_id']}"
             flat_doc["choices"] = choices
             flat_doc["answer_text"] = str(answer).strip()
-        elif source_task == "ring_toss_counting_physics":
-            success = int(answer["success"])
-            failure = int(answer["failure"])
-            flat_doc["target_success"] = success
-            flat_doc["target_failure"] = failure
-            flat_doc["answer_text"] = f"Success: {success}, Failure: {failure}"
         else:
             value = int(answer)
             flat_doc["target_value"] = value
@@ -114,6 +108,7 @@ process_shell_game_docs = _make_processor("shell_game")
 process_shell_game_rotate_docs = _make_processor("shell_game_rotate")
 process_tighten_untighten_docs = _make_processor("tighten_untighten")
 process_tilt_box_docs = _make_processor("tilt_box")
+process_ring_toss_docs = _make_processor("ring_toss")
 
 
 DATA_ROOT = "/Users/sihyun/Desktop/Research/projects/NYU/data"
@@ -199,8 +194,6 @@ def _extract_mcq_letter(text):
 def _parse_prediction(doc, prediction):
     if doc["is_mcq"]:
         return _extract_mcq_letter(prediction)
-    if doc["source_task"] == "ring_toss_counting_physics":
-        return _extract_success_failure(prediction)
     return _extract_last_integer(prediction)
 
 
@@ -209,8 +202,6 @@ def _is_correct(doc, parsed_prediction):
         return False
     if doc["is_mcq"]:
         return parsed_prediction == doc["answer_text"]
-    if doc["source_task"] == "ring_toss_counting_physics":
-        return parsed_prediction == (doc["target_success"], doc["target_failure"])
     return parsed_prediction == doc.get("target_value")
 
 

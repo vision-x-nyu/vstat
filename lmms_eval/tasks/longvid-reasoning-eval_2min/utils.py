@@ -54,7 +54,7 @@ TASK_INSTRUCTIONS = {
 
 def _build_task_dataset(dataset, source_task):
     assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = merged_qa_data_tree(dataset)[BENCH_KEY][source_task]
+    source_docs = dataset[0]["data"][source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]
@@ -75,7 +75,7 @@ def _build_task_dataset(dataset, source_task):
 
         if is_mcq:
             flat_doc["answer_text"] = str(answer)
-        elif source_task == "ring_toss_counting_physics":
+        elif source_task == "ring_toss":
             success = int(answer["success"])
             flat_doc["target_value"] = success
             flat_doc["answer_text"] = str(success)

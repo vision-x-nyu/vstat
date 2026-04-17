@@ -10,3 +10,4 @@ task:
   - longvid-reasoning-eval_1min_stretch_0p2s_shell_game_rotate
   - longvid-reasoning-eval_1min_stretch_0p2s_tighten_untighten
   - longvid-reasoning-eval_1min_stretch_0p2s_tilt_box
+  - longvid-reasoning-eval_1min_stretch_0p2s_ring_toss

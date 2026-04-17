@@ -10,3 +10,7 @@ task:
   - longvid-reasoning-eval_20sec_stretch_0p2s_shell_game
   - longvid-reasoning-eval_20sec_stretch_0p2s_tighten_untighten
   - longvid-reasoning-eval_20sec_stretch_0p2s_tilt_box
+  - longvid-reasoning-eval_20sec_stretch_0p2s_ring_toss
+  - longvid-reasoning-eval_20sec_stretch_0p2s_hockey_own_goal
+  - longvid-reasoning-eval_20sec_stretch_0p2s_hockey_score
+  - longvid-reasoning-eval_20sec_stretch_0p2s_hockey_longest_game

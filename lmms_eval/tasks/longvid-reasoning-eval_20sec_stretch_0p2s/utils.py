@@ -26,12 +26,18 @@ BENCH_KEY = "20sec"
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
+SUCCESS_AFTER_PATTERN = re.compile(r"(?:success|successful)[^0-9]*(\d+)", re.IGNORECASE)
+SUCCESS_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:success|successful)", re.IGNORECASE)
+FAILURE_AFTER_PATTERN = re.compile(r"(?:failure|unsuccessful)[^0-9]*(\d+)", re.IGNORECASE)
+FAILURE_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:failure|unsuccessful)", re.IGNORECASE)
 MCQ_TASKS = frozenset({
     "memory_sliding_puzzle",
     "opaque",
     "shell_game",
     "shell_game_rotate",
     "tilt_box",
+    "hockey_score",
+    "hockey_longest_game",
 })
 TASK_INSTRUCTIONS = {
     "hidden_dice_roll":    "Return only the final count as a single integer.\nAnswer:",
@@ -44,12 +50,15 @@ TASK_INSTRUCTIONS = {
     "block_counting":      "Return only the final count as a single integer.\nAnswer:",
     "make_coffee":         "Return only the final count as a single integer.\nAnswer:",
     "tighten_untighten":   "Return only the final count as a single integer.\nAnswer:",
+    "hockey_score":        "",
+    "hockey_own_goal":     "Return only the final count as a single integer.\nAnswer:",
+    "hockey_longest_game": "",
 }
 
 
 def _build_task_dataset(dataset, source_task):
     assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = dataset[0]["data"][BENCH_KEY][source_task]
+    source_docs = dataset[0]["data"][source_task]
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]
@@ -85,6 +94,9 @@ def _make_processor(source_task):
     return process_docs
 
 
+process_ring_toss_docs = _make_processor("ring_toss")
+
+
 process_block_counting_docs        = _make_processor("block_counting")
 process_hidden_dice_roll_docs      = _make_processor("hidden_dice_roll")
 process_make_coffee_docs           = _make_processor("make_coffee")
@@ -95,6 +107,9 @@ process_shell_game_docs            = _make_processor("shell_game")
 process_shell_game_rotate_docs     = _make_processor("shell_game_rotate")
 process_tighten_untighten_docs     = _make_processor("tighten_untighten")
 process_tilt_box_docs              = _make_processor("tilt_box")
+process_hockey_own_goal_docs = _make_processor("hockey_own_goal")
+process_hockey_score_docs = _make_processor("hockey_score")
+process_hockey_longest_game_docs = _make_processor("hockey_longest_game")
 
 
 DATA_ROOT     = "/Users/sihyun/Desktop/Research/projects/NYU/data"
@@ -123,6 +138,27 @@ def doc_to_text(doc, lmms_eval_specific_kwargs=None):
 
 def doc_to_target(doc):
     return doc["answer_text"]
+
+
+def _extract_keyword_integer(pattern, text):
+    match = pattern.search(str(text))
+    if match is None:
+        return None
+    groups = [g for g in match.groups() if g is not None]
+    return int(groups[0]) if groups else None
+
+
+def _extract_success_failure(text):
+    success = _extract_keyword_integer(SUCCESS_AFTER_PATTERN, text)
+    if success is None:
+        success = _extract_keyword_integer(SUCCESS_BEFORE_PATTERN, text)
+    failure = _extract_keyword_integer(FAILURE_AFTER_PATTERN, text)
+    if failure is None:
+        failure = _extract_keyword_integer(FAILURE_BEFORE_PATTERN, text)
+    if success is not None and failure is not None:
+        return success, failure
+    matches = [int(m) for m in INTEGER_PATTERN.findall(str(text))]
+    return tuple(matches[-2:]) if len(matches) >= 2 else None
 
 
 def _extract_last_integer(text):
