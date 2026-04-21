@@ -1,0 +1,9 @@
+group: longvid-reasoning-eval_ytb_stretch_0p2s
+task:
+  - longvid-reasoning-eval_ytb_stretch_0p2s_coffee
+  - longvid-reasoning-eval_ytb_stretch_0p2s_wii
+  - longvid-reasoning-eval_ytb_stretch_0p2s_soccer
+  - longvid-reasoning-eval_ytb_stretch_0p2s_basketball
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cooking
+  - longvid-reasoning-eval_ytb_stretch_0p2s_latte_art
+  # - longvid-reasoning-eval_ytb_stretch_0p2s_cup_race

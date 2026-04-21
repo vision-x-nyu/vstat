@@ -1,0 +1,31 @@
+dataset_path: json
+dataset_kwargs:
+  data_files:
+    test: /nas2/benchmarks/vpi/ytb-vids/merged_qa/merged_adv_qa.json
+task: longvid-reasoning-eval_ytb
+test_split: test
+output_type: generate_until
+doc_to_visual: !function utils.doc_to_visual
+doc_to_text: !function utils.doc_to_text
+doc_to_target: !function utils.doc_to_target
+process_results: !function utils.process_results
+metric_list:
+  - metric: accuracy
+    aggregation: !function utils.aggregate_accuracy
+    higher_is_better: true
+  - metric: mra
+    aggregation: !function utils.aggregate_mra
+    higher_is_better: true
+  - metric: mae
+    aggregation: !function utils.aggregate_mae
+    higher_is_better: false
+generation_kwargs:
+  max_new_tokens: 16384
+  temperature: 0
+  do_sample: false
+lmms_eval_specific_kwargs:
+  default:
+    pre_prompt: ""
+    post_prompt: ""
+metadata:
+  version: 0.0

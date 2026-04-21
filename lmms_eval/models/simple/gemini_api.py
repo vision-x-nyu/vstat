@@ -40,12 +40,14 @@ class GeminiAPI(lmms):
         model_version: str = "gemini-1.5-pro",
         timeout: int = 120,
         interleave: bool = False,
+        no_audio: bool = False,
         **kwargs,
     ) -> None:
         super().__init__()
         self.model_version = model_version
         self.timeout = timeout
         self.interleave = interleave
+        self.no_audio = no_audio
 
         accelerator = Accelerator()
         if accelerator.num_processes > 1:
@@ -106,6 +108,9 @@ class GeminiAPI(lmms):
     def convert_modality(self, images):
         for idx, img in enumerate(images):
             if isinstance(img, dict) and "sampling_rate" in img:  # audio
+                if self.no_audio:
+                    images[idx] = None
+                    continue
                 audio = self.encode_audio(img)
                 images[idx] = audio
             elif isinstance(img, str):  # video
@@ -163,7 +168,7 @@ class GeminiAPI(lmms):
 
             visuals = [doc_to_visual(self.task_dict[task][split][doc_id])]
             visuals = self.flatten(visuals)
-            visuals = self.convert_modality(visuals)
+            visuals = [v for v in self.convert_modality(visuals) if v is not None]
 
             if self.interleave:
                 message = self.construct_interleaved_input(contexts, visuals)
