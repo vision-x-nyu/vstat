@@ -1,7 +1,7 @@
 dataset_path: json
 dataset_kwargs:
   data_files:
-    test: /nas2/benchmarks/vpi/ytb-vids/merged_qa/merged_qa_stretch_0p2s.json
+    test: /nas2/benchmarks/vpi/ytb-vids/merged_qa/merged_adv_qa_stretch_0p2s.json
 task: longvid-reasoning-eval_ytb_stretch_0p2s
 test_split: test
 output_type: generate_until

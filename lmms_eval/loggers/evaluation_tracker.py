@@ -208,7 +208,9 @@ class EvaluationTracker:
                 path.mkdir(parents=True, exist_ok=True)
 
                 self.date_id = datetime_str.replace(":", "-")
-                file_results_aggregated = path.joinpath(f"{self.date_id}_results.json")
+                path = path.joinpath(self.date_id)
+                path.mkdir(parents=True, exist_ok=True)
+                file_results_aggregated = path.joinpath(f"results.json")
                 file_results_aggregated.open("w", encoding="utf-8").write(dumped)
 
                 if self.api and self.push_results_to_hub:
@@ -221,10 +223,11 @@ class EvaluationTracker:
                     )
                     self.api.upload_file(
                         repo_id=repo_id,
-                        path_or_fileobj=str(path.joinpath(f"{self.date_id}_results.json")),
+                        path_or_fileobj=str(path.joinpath(f"results.json")),
                         path_in_repo=os.path.join(
                             self.general_config_tracker.model_name,
-                            f"{self.date_id}_results.json",
+                            self.date_id,
+                            f"results.json",
                         ),
                         repo_type="dataset",
                         commit_message=f"Adding aggregated results for {self.general_config_tracker.model_name}",
@@ -252,10 +255,10 @@ class EvaluationTracker:
         if self.output_path:
             try:
                 path = Path(self.output_path if self.output_path else Path.cwd())
-                path = path.joinpath(self.general_config_tracker.model_name_sanitized)
+                path = path.joinpath(self.general_config_tracker.model_name_sanitized, self.date_id)
                 path.mkdir(parents=True, exist_ok=True)
 
-                file_results_samples = path.joinpath(f"{self.date_id}_samples_{task_name}.jsonl")
+                file_results_samples = path.joinpath(f"samples_{task_name}.jsonl")
 
                 for sample in samples:
                     # we first need to sanitize arguments and resps

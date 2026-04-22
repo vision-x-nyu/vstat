@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_stretch_0p2s_strand_count
+process_docs: !function utils.process_strand_count_docs
+include: _default_template_yaml

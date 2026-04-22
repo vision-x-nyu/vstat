@@ -163,6 +163,7 @@ EXCLUDED_TASKS = {
     # Circuit procedural answers (domain-specific, no automatable distractors).
     "circuit",
     "table_tennis",
+    "predictive_tennis",
 }
 
 # (task_key, video_id) pairs that should be excluded from merged_qa.

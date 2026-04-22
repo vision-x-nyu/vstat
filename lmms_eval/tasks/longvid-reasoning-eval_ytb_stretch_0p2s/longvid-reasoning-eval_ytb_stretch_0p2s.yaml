@@ -1,9 +1,24 @@
 group: longvid-reasoning-eval_ytb_stretch_0p2s
 task:
-  - longvid-reasoning-eval_ytb_stretch_0p2s_coffee
-  - longvid-reasoning-eval_ytb_stretch_0p2s_wii
-  - longvid-reasoning-eval_ytb_stretch_0p2s_soccer
   - longvid-reasoning-eval_ytb_stretch_0p2s_basketball
+  - longvid-reasoning-eval_ytb_stretch_0p2s_bouldering
+  - longvid-reasoning-eval_ytb_stretch_0p2s_boxing
+  - longvid-reasoning-eval_ytb_stretch_0p2s_carousel
+  - longvid-reasoning-eval_ytb_stretch_0p2s_coffee
   - longvid-reasoning-eval_ytb_stretch_0p2s_cooking
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cube
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cup_race
+  - longvid-reasoning-eval_ytb_stretch_0p2s_eating_contest
+  - longvid-reasoning-eval_ytb_stretch_0p2s_graffiti
+  - longvid-reasoning-eval_ytb_stretch_0p2s_jump_rope
   - longvid-reasoning-eval_ytb_stretch_0p2s_latte_art
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_cup_race
+  - longvid-reasoning-eval_ytb_stretch_0p2s_lego
+  - longvid-reasoning-eval_ytb_stretch_0p2s_marching_band
+  - longvid-reasoning-eval_ytb_stretch_0p2s_matryoshka
+  - longvid-reasoning-eval_ytb_stretch_0p2s_n_back
+  - longvid-reasoning-eval_ytb_stretch_0p2s_order_packing
+  - longvid-reasoning-eval_ytb_stretch_0p2s_soccer
+  - longvid-reasoning-eval_ytb_stretch_0p2s_strand_count
+  - longvid-reasoning-eval_ytb_stretch_0p2s_street_food
+  - longvid-reasoning-eval_ytb_stretch_0p2s_tennis
+  - longvid-reasoning-eval_ytb_stretch_0p2s_wii
