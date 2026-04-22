@@ -25,7 +25,7 @@ from datasets import Dataset
 BENCH_KEY = "20sec"
 OPTION_LETTERS = "ABCD"
 INTEGER_PATTERN = re.compile(r"\b\d+\b")
-MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
+MCQ_LETTER_PATTERN = re.compile(r"\b([A-G])\b")
 SUCCESS_AFTER_PATTERN = re.compile(r"(?:success|successful)[^0-9]*(\d+)", re.IGNORECASE)
 SUCCESS_BEFORE_PATTERN = re.compile(r"(\d+)[^0-9]{0,24}(?:success|successful)", re.IGNORECASE)
 FAILURE_AFTER_PATTERN = re.compile(r"(?:failure|unsuccessful)[^0-9]*(\d+)", re.IGNORECASE)
@@ -38,6 +38,8 @@ MCQ_TASKS = frozenset({
     "tilt_box",
     "hockey_score",
     "hockey_longest_game",
+    "funnel_ball_longest",
+    "pinwheel_longest",
 })
 TASK_INSTRUCTIONS = {
     "hidden_dice_roll":    "Return only the final count as a single integer.\nAnswer:",
@@ -109,7 +111,9 @@ process_tighten_untighten_docs     = _make_processor("tighten_untighten")
 process_tilt_box_docs              = _make_processor("tilt_box")
 process_hockey_own_goal_docs = _make_processor("hockey_own_goal")
 process_hockey_score_docs = _make_processor("hockey_score")
+process_funnel_ball_longest_docs = _make_processor("funnel_ball_longest")
 process_hockey_longest_game_docs = _make_processor("hockey_longest_game")
+process_pinwheel_longest_docs = _make_processor("pinwheel_longest")
 
 
 DATA_ROOT     = "/nas2/benchmarks/vpi/blender"
@@ -131,7 +135,13 @@ def doc_to_text(doc, lmms_eval_specific_kwargs=None):
     post_prompt = kwargs.get("post_prompt", "")
     body = f"Watch the full video carefully before answering.\n\nQuestion: {doc['question']}"
     if doc["is_mcq"]:
-        body += "\n\nPlease answer with the letter (A, B, C, or D)."
+        n_choices = len(doc.get("choices") or []) or 4
+        letters = [c for c in "ABCDEFG"[:n_choices]]
+        if len(letters) == 1:
+            letter_hint = letters[0]
+        else:
+            letter_hint = ", ".join(letters[:-1]) + f", or {letters[-1]}"
+        body += f"\n\nPlease answer with the letter ({letter_hint})."
     else:
         instruction = TASK_INSTRUCTIONS.get(doc["source_task"], "")
         if instruction:

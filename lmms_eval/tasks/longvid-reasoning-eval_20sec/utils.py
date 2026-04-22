@@ -9,7 +9,7 @@ Usage:
 Referenced by the YAML task configs in this directory via `!function`.
 
 Input spec:
-`/nas2/benchmarks/vpi/blender/merged_qa/20_sec.json` with
+`/nas2/benchmarks/vpi/blender/merged_qa/20sec.json` with
 `data -> 20sec -> <task_name> -> list[example]`.
 
 Output spec:

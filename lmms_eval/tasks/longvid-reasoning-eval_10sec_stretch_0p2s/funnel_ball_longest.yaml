@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_10sec_stretch_0p2s_funnel_ball_longest
+process_docs: !function utils.process_funnel_ball_longest_docs
+include: _default_template_yaml

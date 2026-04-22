@@ -14,3 +14,5 @@ task:
   - longvid-reasoning-eval_20sec_stretch_0p2s_hockey_own_goal
   - longvid-reasoning-eval_20sec_stretch_0p2s_hockey_score
   - longvid-reasoning-eval_20sec_stretch_0p2s_hockey_longest_game
+  - longvid-reasoning-eval_20sec_stretch_0p2s_funnel_ball_longest
+  - longvid-reasoning-eval_20sec_stretch_0p2s_pinwheel_longest

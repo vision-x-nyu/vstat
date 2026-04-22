@@ -176,6 +176,7 @@ class GeminiAPI(lmms):
                 message = [contexts] + visuals
 
             token_counts = None
+            reasoning = None
             for attempt in range(5):
                 try:
                     response = client.models.generate_content(
@@ -215,15 +216,19 @@ class GeminiAPI(lmms):
                     if finish_reason and finish_reason != "STOP":
                         eval_logger.warning(f"Response finished with reason {finish_reason} for doc_id={doc_id}")
 
-                    # Extract text (skip thinking parts, get only actual response)
+                    # Extract text and capture reasoning/thought summary separately.
                     text_parts = []
+                    thought_parts = []
                     if response.candidates and response.candidates[0].content:
                         for part in response.candidates[0].content.parts:
-                            if hasattr(part, "thought") and part.thought:
-                                continue  # skip thinking parts
-                            if part.text:
+                            if not getattr(part, "text", None):
+                                continue
+                            if getattr(part, "thought", False):
+                                thought_parts.append(part.text)
+                            else:
                                 text_parts.append(part.text)
                     content = "".join(text_parts)
+                    reasoning = "".join(thought_parts) if thought_parts else None
                     break
                 except Exception as e:
                     eval_logger.info(f"Attempt {attempt + 1} failed with error: {str(e)}")
@@ -233,7 +238,8 @@ class GeminiAPI(lmms):
                         eval_logger.error(f"All 5 attempts failed. Last error message: {str(e)}")
                         content = ""
                         token_counts = None
-            res.append(GenerationResult(text=content, token_counts=token_counts))
+                        reasoning = None
+            res.append(GenerationResult(text=content, token_counts=token_counts, reasoning=reasoning))
             pbar.update(1)
 
             self.free_video()
