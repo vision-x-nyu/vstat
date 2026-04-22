@@ -365,7 +365,7 @@ def main(argv=None):
 
     # keyboard (MCQ via edit distance over same-length English words)
     data.update(build_simple_mcq(
-        lt("single_state/keyboard"), "keyboard",
+        lt("multi_state/keyboard"), "keyboard",
         lambda correct, _pool: nearest_by_edit(correct, english_word_pool(correct), 3),
     ))
 
