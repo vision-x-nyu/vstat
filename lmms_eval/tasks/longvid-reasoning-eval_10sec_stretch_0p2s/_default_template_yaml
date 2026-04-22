@@ -2,6 +2,7 @@ dataset_path: json
 dataset_kwargs:
   data_files:
     test: /nas2/benchmarks/vpi/blender/merged_qa/10sec_stretch_0p2s.json
+  chunksize: 50000000
 task: longvid-reasoning-eval_10sec_stretch_0p2s
 test_split: test
 output_type: generate_until

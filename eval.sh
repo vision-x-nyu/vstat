@@ -9,7 +9,7 @@ BATCH_SIZE="${BATCH_SIZE:-64}"
 PYTHON="${PYTHON:-python}"
 
 OUTPUT_DIR="results/longvid-reasoning-eval_recorded/gemini31_pro"
-LOG_SAMPLES_SUFFIX="gemini31_pro_longvid-reasoning-eval_recorded"
+LOG_SAMPLES_SUFFIX="gemini31_pro_longvid-reasoning-eval_recorded_stretch_0p2s"
 
 export LMMS_EVAL_LAUNCHER=python
 
@@ -18,7 +18,7 @@ mkdir -p "$OUTPUT_DIR"
 MODEL_ARGS="model_version=${MODEL_VERSION},timeout=120"
 
 SUBTASKS=(
-    "longvid-reasoning-eval_recorded"
+    "longvid-reasoning-eval_recorded_stretch_0p2s"
 )
 
 for TASK in "${SUBTASKS[@]}"; do

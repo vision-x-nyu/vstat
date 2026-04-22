@@ -52,6 +52,40 @@ CLIP_RE = re.compile(r"^(\d+)_pt(\d+)\.mp4$")
 PURE_NUM_RE = re.compile(r"-?\d+(?:\.\d+)?")
 PERCENT_RE = re.compile(r"(-?\d+(?:\.\d+)?)\s*%")
 
+# After reorg, ytb-vids/{raw,processed} are flat at the <task> level.
+# The older merged_qa keyed entries by "<category>/<task>" (e.g.
+# "state_tracking/lego"). To preserve that downstream convention we carry an
+# explicit task -> category map. Tasks not listed here use `CATEGORY_FALLBACK`.
+CATEGORY_MAP = {
+    # --- preserved from the old 4-level layout ---
+    "basketball": "fine_grained",
+    "bouldering": "state_tracking",
+    "coffee": "fine_grained",
+    "cookie_packing": "state_tracking",
+    "cooking": "state_tracking",
+    "cube": "activity_segmentation",
+    "cup_race": "duration_estimation",
+    "eating_contest": "activity_segmentation",
+    "graffiti": "state_tracking",
+    "jump_rope": "activity_segmentation",
+    "latte_art": "duration_estimation",
+    "lego": "state_tracking",
+    "n_back": "state_tracking",
+    "soccer": "fine_grained",
+    "strand_count": "state_tracking",
+    "wii": "state_tracking",
+    # --- new tasks after reorg (best-guess categories) ---
+    "boxing": "fine_grained",
+    "carousel": "fine_grained",
+    "circuit": "state_tracking",
+    "marching_band": "fine_grained",
+    "matryoshka": "state_tracking",
+    "order_packing": "state_tracking",
+    "shell_game": "state_tracking",
+    "street_food": "fine_grained",
+}
+CATEGORY_FALLBACK = "uncategorized"
+
 
 # --- edit distance ---------------------------------------------------------
 def levenshtein(a: str, b: str) -> int:
@@ -108,32 +142,41 @@ def normalize_answer(ans_raw):
 # --- raw -> clip matching --------------------------------------------------
 def iter_clips(proc_root, raw_root):
     """Yield (cat, task, clip_filename, fid, idx) for every standard clip that
-    has a matching raw JSON with questions."""
+    has a matching raw JSON with questions.
+
+    Layout (post-reorg):
+        raw/<task>/<fid>.json
+        processed/<task>/<fid>_pt<idx>.mp4
+
+    `cat` is resolved from `CATEGORY_MAP` (falls back to CATEGORY_FALLBACK).
+    """
     if not os.path.isdir(proc_root):
         return
-    for cat in sorted(os.listdir(proc_root)):
-        cat_dir = f"{proc_root}/{cat}"
-        if not os.path.isdir(cat_dir):
+    for task in sorted(os.listdir(proc_root)):
+        task_dir = f"{proc_root}/{task}"
+        if not os.path.isdir(task_dir):
             continue
-        for task in sorted(os.listdir(cat_dir)):
-            task_dir = f"{cat_dir}/{task}"
-            raw_task_dir = f"{raw_root}/{cat}/{task}"
-            if not os.path.isdir(raw_task_dir):
+        raw_task_dir = f"{raw_root}/{task}"
+        if not os.path.isdir(raw_task_dir):
+            continue
+        cat = CATEGORY_MAP.get(task, CATEGORY_FALLBACK)
+        for f in sorted(os.listdir(task_dir)):
+            if not f.endswith(".mp4"):
                 continue
-            for f in sorted(os.listdir(task_dir)):
-                if not f.endswith(".mp4"):
-                    continue
-                m = CLIP_RE.match(f)
-                if not m:
-                    continue
-                fid = m.group(1)
-                idx = int(m.group(2))
-                yield cat, task, f, fid, idx
+            m = CLIP_RE.match(f)
+            if not m:
+                continue
+            fid = m.group(1)
+            idx = int(m.group(2))
+            yield cat, task, f, fid, idx
 
 
 def load_raw_qa(raw_root, cat, task):
+    # `cat` is kept in the signature for backwards compatibility but is no
+    # longer part of the raw path under the post-reorg flat layout.
+    del cat
     out = {}
-    d = f"{raw_root}/{cat}/{task}"
+    d = f"{raw_root}/{task}"
     for rj in sorted(glob.glob(f"{d}/*.json")):
         fid = os.path.basename(rj).replace(".json", "")
         with open(rj) as fp:
@@ -458,7 +501,7 @@ def main(argv=None):
             continue
 
         video_id_base = clip_file.replace(".mp4", "")
-        video_path = f"{video_root}/{cat}/{task}/{clip_file}"
+        video_path = f"{video_root}/{task}/{clip_file}"
 
         for qi, q in enumerate(matched):
             raw_answer = q.get("answer", "")
