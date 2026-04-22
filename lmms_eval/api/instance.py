@@ -32,10 +32,15 @@ class GenerationResult:
     Models that wish to report per-sample token counts should return a
     list of ``GenerationResult`` instead of plain strings.  The evaluator
     transparently handles both ``str`` and ``GenerationResult`` outputs.
+
+    ``reasoning`` carries an optional reasoning/thought summary emitted by
+    the model (e.g. Gemini ``includeThoughts=True``) so the evaluator can
+    persist it alongside the final answer in logged samples.
     """
 
     text: str
     token_counts: Optional[TokenCounts] = None
+    reasoning: Optional[str] = None
 
 
 GenerationOutput = Union[str, GenerationResult]
@@ -66,6 +71,13 @@ def unwrap_generation_output(output: Any) -> Tuple[str, Optional[TokenCounts]]:
     return str(output), None
 
 
+def extract_reasoning(output: Any) -> Optional[str]:
+    """Return the reasoning/thought summary attached to a model output, if any."""
+    if isinstance(output, GenerationResult):
+        return output.reasoning
+    return None
+
+
 @dataclass
 class Instance:
     request_type: Literal["loglikelihood", "generate_until", "generate_until_multi_round", "generate_until_agentic"]
@@ -77,6 +89,7 @@ class Instance:
     raw_filtered_resps: dict = field(default_factory=dict)
 
     token_counts: List[Optional[TokenCounts]] = field(default_factory=list)
+    reasonings: List[Optional[str]] = field(default_factory=list)
 
     # initialized after init
     task_name: str = None

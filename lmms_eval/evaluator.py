@@ -20,7 +20,7 @@ import lmms_eval.api
 import lmms_eval.api.metrics
 import lmms_eval.api.registry
 from lmms_eval import models
-from lmms_eval.api.instance import Instance, unwrap_generation_output
+from lmms_eval.api.instance import Instance, extract_reasoning, unwrap_generation_output
 from lmms_eval.api.model import lmms
 from lmms_eval.api.reasoning import parse_reasoning_tags_config, strip_reasoning_tags
 from lmms_eval.api.task import Task
@@ -1096,6 +1096,7 @@ def evaluate(
             text, tc = unwrap_generation_output(x)
             req.resps.append(text)
             req.token_counts.append(tc)
+            req.reasonings.append(extract_reasoning(x))
 
         if is_budget_exceeded():
             eval_logger.warning("Token budget reached after '{}' requests. Skipping remaining request types.", reqtype)
@@ -1241,12 +1242,14 @@ def evaluate(
                     input_media = _collect_input_media(doc, filtered_arguments)
 
                     per_sample_tc = []
+                    per_sample_reasoning = []
                     for req in requests:
                         if req.token_counts:
                             tc = req.token_counts[0]
                             per_sample_tc.append(tc.to_dict() if tc is not None else None)
                         else:
                             per_sample_tc.append(None)
+                        per_sample_reasoning.append(req.reasonings[0] if req.reasonings else None)
 
                     example = {
                         "doc_id": doc_id,
@@ -1256,6 +1259,7 @@ def evaluate(
                         "resps": [req.raw_filtered_resps.get(filter_key, req.resps) for req in requests],
                         "filtered_resps": [req.filtered_resps[filter_key] for req in requests],
                         "token_counts": per_sample_tc,
+                        "reasoning": per_sample_reasoning,
                         "doc_hash": hash_string(
                             json.dumps(
                                 requests[0].doc,
