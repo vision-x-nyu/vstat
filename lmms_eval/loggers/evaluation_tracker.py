@@ -286,7 +286,9 @@ class EvaluationTracker:
                         sample.pop("resps")
                     sample["target"] = str(sample["target"])
                     sample.pop("arguments")
-                    sample.pop("doc")
+                    doc = sample.pop("doc")
+                    if isinstance(doc, dict) and "video_path" in doc:
+                        sample["video_path"] = doc["video_path"]
 
                     sample_dump = (
                         json.dumps(

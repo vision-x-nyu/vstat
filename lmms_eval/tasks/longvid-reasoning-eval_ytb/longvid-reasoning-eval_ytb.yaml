@@ -10,15 +10,20 @@ task:
   - longvid-reasoning-eval_ytb_cup_race
   - longvid-reasoning-eval_ytb_eating_contest
   - longvid-reasoning-eval_ytb_graffiti
+  - longvid-reasoning-eval_ytb_horse_racing
   - longvid-reasoning-eval_ytb_jump_rope
   - longvid-reasoning-eval_ytb_latte_art
   - longvid-reasoning-eval_ytb_lego
   - longvid-reasoning-eval_ytb_marching_band
   - longvid-reasoning-eval_ytb_matryoshka
+  - longvid-reasoning-eval_ytb_memory_card
   - longvid-reasoning-eval_ytb_n_back
+  - longvid-reasoning-eval_ytb_neuro_tracker
   - longvid-reasoning-eval_ytb_order_packing
   - longvid-reasoning-eval_ytb_soccer
   - longvid-reasoning-eval_ytb_strand_count
   - longvid-reasoning-eval_ytb_street_food
+  - longvid-reasoning-eval_ytb_table_tennis
   - longvid-reasoning-eval_ytb_tennis
+  - longvid-reasoning-eval_ytb_volleyball
   - longvid-reasoning-eval_ytb_wii

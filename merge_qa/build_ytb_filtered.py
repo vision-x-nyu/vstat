@@ -1,42 +1,34 @@
-"""Build merged_qa/merged_qa.json for the ytb-vids benchmark.
+"""Build a filtered merged_qa.json for the ytb-vids benchmark.
 
-This is the portable copy of /nas2/benchmarks/vpi/ytb-vids/merged_qa/_build.py.
-Paths are parameterized so the script can be run from anywhere.
+Same as `build_ytb.py`, but cross-checks each (clip, raw question) pair
+against a CSV review sheet and only keeps entries whose last CSV column
+is empty or "FALSE". Entries marked "TRUE" are dropped; entries absent
+from the CSV are dropped with a warning.
 
 Configuration (in priority order):
   1. --base CLI argument
   2. $VPI_YTB_BASE environment variable
   3. Default: /nas2/benchmarks/vpi/ytb-vids
 
-Similarly, --out overrides the output path (default: <BASE>/merged_qa/merged_qa.json).
+Other flags:
+  --csv  Path to the review sheet
+         (default: <repo>/sheets/vpi_redesign_clean_1.csv).
+  --out  Output JSON path
+         (default: <base>/merged_qa/merged_qa_filtered.json).
 
-Usage:
-    python build_ytb.py
-    python build_ytb.py --base /path/to/ytb-vids
-    VPI_YTB_BASE=/path/to/ytb-vids python build_ytb.py
-    python build_ytb.py --out /tmp/ytb_merged.json
+CSV layout:
+  - Rows 1-3 are header/comment rows and are skipped.
+  - Column 0: question text (matches the raw `questions[i].question`).
+  - Column 1: video_path (e.g.
+    `/nas2/benchmarks/vpi/ytb-vids/processed/<task>/<fid>_pt<idx>.mp4`).
+  - Column 8 (last): "TRUE" / "FALSE" / "".
 
-Clip-to-QA mapping:
-  - Standard processed clip `<fid>_pt<idx>.mp4` is paired with raw questions
-    whose `index == idx` in `raw/<cat>/<task>/<fid>.json`.
-  - Fallback: if raw has a single question with no `index` field and only one
-    segment, it maps to `_pt1`.
-  - Non-standard clips (`_trimmed`, `_fpsN`, `_clip_START-END`, etc.) and
-    tasks without raw QA are skipped.
-
-Answer normalization:
-  - numerical (int/float) or percent "N%" -> string of the integer/float,
-    no choices (blender-style open-ended numerical).
-  - yes/no -> 2-way MCQ {Yes, No}.
-  - everything else -> open-ended (to be converted to MCQ later).
-
-Entry schema matches blender merged_qa exactly:
-  {video_id, video_path, question, answer, answer_index, choices}
-
-Choice order is shuffled deterministically by `(task_key, video_id)` seed,
-mirroring the recorded builder.
+Match key: `(<task>/<clip_filename>, stripped raw question)`. We strip
+the processed-root prefix so the comparison is robust to a different
+`--video-root` on either side.
 """
 import argparse
+import csv
 import glob
 import json
 import os
@@ -47,6 +39,20 @@ from collections import defaultdict
 from functools import lru_cache
 
 DEFAULT_BASE = "/nas2/benchmarks/vpi/ytb-vids"
+DEFAULT_CSV = os.path.join(
+    os.path.dirname(os.path.abspath(__file__)),
+    "..", "sheets", "vpi_redesign_clean_1.csv",
+)
+# Number of leading rows in the CSV that are headers / annotator notes.
+_CSV_HEADER_ROWS = 3
+# Last column index holding the keep/drop flag.
+# _CSV_FLAG_COL = 8  # <--clean_1 version
+_CSV_FLAG_COL = 11  # <--clean_2 version
+
+# Path prefix the review CSV uses for ytb-vids clips. Stripped to
+# `<task>/<clip>.mp4` for matching, so a different `--video-root` on the
+# build side still lines up.
+_YTB_PROC_PREFIX = "/nas2/benchmarks/vpi/ytb-vids/processed/"
 
 # Stretched processed dirs (e.g. `basketball_stretch_0p2s`) share their QA
 # with the base task — the clips are time-stretched copies of the same
@@ -144,6 +150,80 @@ def normalize_answer(ans_raw):
     return ("open_text", s)
 
 
+# --- review CSV ------------------------------------------------------------
+# Some CSV question cells have MCQ choices appended ("\n\n (A) ...").
+# Strip from the first "(A)" choice marker so the question stem is what
+# we compare against.
+_MCQ_TAIL_RE = re.compile(r"\s*\n\s*\(A\)", re.IGNORECASE)
+
+
+def _norm_q(s):
+    s = (s or "").strip()
+    if len(s) >= 2 and s[0] == '"' and s[-1] == '"':
+        s = s[1:-1].strip()
+    s = s.replace("\\'", "'").replace('\\"', '"')
+    m = _MCQ_TAIL_RE.search(s)
+    if m:
+        s = s[: m.start()].rstrip()
+    return s
+
+
+def load_review_csv(csv_path):
+    """Return (review, csv_skipped).
+
+    `review` is dict[rel_path] -> list of (normalized_question, flag).
+    `rel_path` is the CSV's video_path with the ytb-vids processed prefix
+    stripped (`basketball/0001_pt1.mp4`). Rows whose video_path is not
+    under the ytb-vids tree are ignored.
+    """
+    review = defaultdict(list)
+    skipped = 0
+    with open(csv_path, newline="") as fp:
+        reader = csv.reader(fp)
+        for i, row in enumerate(reader):
+            if i < _CSV_HEADER_ROWS:
+                continue
+            if len(row) <= _CSV_FLAG_COL:
+                continue
+            path = row[1]
+            if not path.startswith(_YTB_PROC_PREFIX):
+                skipped += 1
+                continue
+            rel = path[len(_YTB_PROC_PREFIX):]
+            review[rel].append((_norm_q(row[0]), row[_CSV_FLAG_COL].strip().upper()))
+    return dict(review), skipped
+
+
+def lookup_review(review, rel_path, question):
+    """Return (flag, csv_question, "exact") on a match, else (None, None, "missing").
+
+    Strict exact-question match within `rel_path`. Fuzzy candidates are
+    intentionally not accepted here — see `closest_csv_question` for the
+    diagnostic-only nearest-neighbour lookup.
+    """
+    candidates = review.get(rel_path)
+    if not candidates:
+        return None, None, "missing"
+    qn = _norm_q(question)
+    for q_csv, flag in candidates:
+        if q_csv == qn:
+            return flag, q_csv, "exact"
+    return None, None, "missing"
+
+
+def closest_csv_question(review, rel_path, question):
+    """For diagnostic logging: return (csv_question, distance, flag) for
+    the CSV row on `rel_path` whose question is closest to `question`.
+    Returns None if `rel_path` is not in the CSV at all.
+    """
+    candidates = review.get(rel_path)
+    if not candidates:
+        return None
+    qn = _norm_q(question)
+    best = min(candidates, key=lambda c: levenshtein(c[0], qn))
+    return best[0], levenshtein(best[0], qn), best[1]
+
+
 # --- raw -> clip matching --------------------------------------------------
 def iter_clips(proc_root, raw_root):
     """Yield (task, clip_filename, fid, idx) for every standard clip that
@@ -215,6 +295,7 @@ EXCLUDED_TASKS = {
     # Circuit procedural answers (domain-specific, no automatable distractors).
     "circuit",
     "predictive_tennis",
+    "sokoban"
 }
 
 # (task_key, video_id) pairs that should be excluded from merged_qa.
@@ -297,6 +378,62 @@ def _sequence_flip_distractors(correct_str, sep="->", bracket=False,
     if not distractors:
         return None
     rng = random.Random(f"seq_flip:{correct_str}")
+    rng.shuffle(distractors)
+    return correct_str, distractors[:3]
+
+
+def _tuple_flip_distractors(correct_str, bracket=False,
+                            distractors_pool=None):
+    """Generate distractors by changing one integer element by +/- 1.
+
+    Tuple elements are expected to be scalar integers. Works for both
+    arrow-separated ("1 -> 2 -> 3") and tuple/comma ("(1, 2, 3)") formats.
+    Each generated distractor has edit distance 1 from the correct tuple:
+    exactly one integer is modified, and that modification is either +1 or -1.
+    Returns (correct, distractors[:3]) or None.
+    """
+    if bracket:
+        stripped = correct_str.strip()
+        if stripped.startswith("(") and stripped.endswith(")"):
+            prefix, suffix = "(", ")"
+            inner = stripped[1:-1]
+        elif stripped.startswith("[") and stripped.endswith("]"):
+            prefix, suffix = "[", "]"
+            inner = stripped[1:-1]
+        else:
+            prefix, suffix = "(", ")"
+            inner = stripped
+        elements = [e.strip() for e in inner.split(",")]
+    else:
+        prefix = suffix = ""
+        elements = [e.strip() for e in correct_str.split("->")]
+
+    if not elements or any(not e for e in elements):
+        return None
+
+    try:
+        values = [int(e) for e in elements]
+    except ValueError:
+        print(f"WARNING: tuple elements must be integers: {correct_str!r}", file=sys.stderr)
+        return None
+
+    distractors = []
+    seen_candidates: set[str] = set()
+    for i, value in enumerate(values):
+        for delta in (-1, 1):
+            flipped = values[:]
+            flipped[i] = value + delta
+            if bracket:
+                candidate = prefix + ", ".join(str(v) for v in flipped) + suffix
+            else:
+                candidate = " -> ".join(str(v) for v in flipped)
+            if candidate != correct_str and candidate not in seen_candidates:
+                seen_candidates.add(candidate)
+                distractors.append(candidate)
+
+    if not distractors:
+        return None
+    rng = random.Random(f"tuple_flip:{correct_str}")
     rng.shuffle(distractors)
     return correct_str, distractors[:3]
 
@@ -540,8 +677,6 @@ def _graffiti_random_override(ctx):
             pool.sort(key=lambda w: (levenshtein(correct, w), w))
             return correct, pool[:3]
 
-    print(ctx["question"], ctx["raw_answer"])
-
     return None
 
 
@@ -579,13 +714,24 @@ def _cube_override(ctx):
     if "where" not in ctx["question"].lower():
         return None
     correct = ctx["raw_answer"].strip().rstrip(".").strip()
-    pool = ['top-left', 'top-right', 'bottom-left', 'bottom-right']
+    pool = ['top-left', 'top-right', 'bottom-left', 'bottom-right', 'center-right']
     correct_in_pool = next((p for p in pool if p.lower() == correct.lower()), None)
     if correct_in_pool is None:
         return None
     distractors = [p for p in pool if p != correct_in_pool]
     return correct_in_pool, distractors[:3]
 
+
+def _eating_contest_override(ctx):
+    if ctx["task_key"] != "eating_contest":
+        return None
+    if "order" not in ctx["question"].lower():
+        return None
+    correct = ctx["raw_answer"].strip().rstrip(".").strip()
+    result = _sequence_flip_distractors(correct, bracket=True)
+    if result is not None:
+        return result
+   
 
 def _matryoshka_override(ctx):
     if ctx["task_key"] != "matryoshka":
@@ -596,10 +742,40 @@ def _matryoshka_override(ctx):
     pool = ['red', 'magenta', 'yellow', 'white']
     correct_in_pool = next((p for p in pool if p.lower() == correct.lower()), None)
     if correct_in_pool is None:
-        print(ctx["question"], ctx["raw_answer"])
         return None
     distractors = [p for p in pool if p != correct_in_pool]
     return correct_in_pool, distractors[:3]
+
+
+def _memory_card_override(ctx):
+    if ctx["task_key"] != "memory_card":
+        return None
+    if "what values should be on the cards that have not yet been revealed or flipped face-up by the end of the clip?" in ctx["question"].lower():
+        correct = ctx["raw_answer"].strip().rstrip(".").strip()
+        pool = ['J', 'Q', '5', 'A']
+        correct_in_pool = next((p for p in pool if p.lower() == correct.lower()), None)
+        if correct_in_pool is None:
+            return None
+        distractors = [p for p in pool if p != correct_in_pool]
+        return correct_in_pool, distractors[:3]
+    if "format" not in ctx["question"].lower():
+        return None
+    correct = ctx["raw_answer"].strip().rstrip(".").strip()
+    result = _tuple_flip_distractors(correct, bracket=True)
+    if result is not None:
+        return result
+    return None
+
+def _neuro_tracker_override(ctx):
+    if ctx["task_key"] != "neuro_tracker":
+        return None
+    if "format" not in ctx["question"].lower():
+        return None
+    correct = ctx["raw_answer"].strip().rstrip(".").strip()
+    result = _tuple_flip_distractors(correct, bracket=True)
+    if result is not None:
+        return result
+    return None
 
 _ORDER_PACKING_POOL_SIZE = {
     "0005_pt1": 2,
@@ -625,7 +801,6 @@ def _order_packing_override(ctx):
         return None
     n_orders = _ORDER_PACKING_POOL_SIZE.get(ctx["video_id"])
     if n_orders is None:
-        print(ctx["video_id"], ctx["question"], ctx["raw_answer"])
         return None
     pool = [f"The {w} one" for w in _ORDINALS[:n_orders]]
     correct = f"The {found} one"
@@ -670,7 +845,6 @@ def _table_tennis_override(ctx):
         pool = ['left side', 'right side']
         correct_in_pool = next((p for p in pool if p.lower() == correct.lower()), None)
         if correct_in_pool is None:
-            print(ctx["video_id"], ctx["question"], ctx["raw_answer"])
             return None
         distractors = [p for p in pool if p != correct_in_pool]
         return correct_in_pool, distractors
@@ -699,7 +873,6 @@ def _tennis_override(ctx):
         pool = ['the left service box', 'the right service box', 'the backcourt', 'out of bounds']
         correct_in_pool = next((p for p in pool if p.lower() == correct.lower()), None)
         if correct_in_pool is None:
-            print(ctx["question"], ctx["raw_answer"])
             return None
         distractors = [p for p in pool if p != correct_in_pool]
         return correct_in_pool, distractors
@@ -725,11 +898,14 @@ def _volleyball_override(ctx):
 OVERRIDES = [
     _boxing_override,
     _cup_race_override,
+    _eating_contest_override,
     _latte_art_override,
     _graffiti_override_factory("adv"),
     _wii_override,
     _cube_override,
     _matryoshka_override,
+    _memory_card_override,
+    _neuro_tracker_override,
     _order_packing_override,
     _table_tennis_override,
     _tennis_override,
@@ -804,7 +980,13 @@ def parse_args(argv=None):
     ap.add_argument(
         "--out",
         default=None,
-        help="Output JSON path (default: <base>/merged_qa/merged_qa.json)",
+        help="Output JSON path (default: <base>/merged_qa/merged_qa_filtered.json)",
+    )
+    ap.add_argument(
+        "--csv",
+        default=DEFAULT_CSV,
+        help="Review CSV with the keep/drop flag in the last column. "
+             "Default: %(default)s",
     )
     ap.add_argument(
         "--video-root",
@@ -825,7 +1007,7 @@ def main(argv=None):
     raw_root = f"{base}/raw"
     proc_root = f"{base}/processed"
     video_root = args.video_root or proc_root
-    out_path = args.out or f"{base}/merged_qa/merged_qa.json"
+    out_path = args.out or f"{base}/merged_qa/merged_qa_filtered.json"
 
     if not os.path.isdir(raw_root) or not os.path.isdir(proc_root):
         print(f"ERROR: expected raw/ and processed/ under {base}", file=sys.stderr)
@@ -833,10 +1015,31 @@ def main(argv=None):
         print(f"  processed/ exists: {os.path.isdir(proc_root)}", file=sys.stderr)
         sys.exit(1)
 
+    if not os.path.isfile(args.csv):
+        print(f"ERROR: review CSV not found: {args.csv}", file=sys.stderr)
+        sys.exit(1)
+    review, csv_skipped = load_review_csv(args.csv)
+    n_review_rows = sum(len(v) for v in review.values())
+    print(
+        f"loaded {n_review_rows} review rows across {len(review)} clips"
+        f" from {args.csv} (skipped {csv_skipped} non-ytb rows)"
+    )
+
     data = defaultdict(list)
 
     # Cache raw QA per (cat, task)
     raw_cache = {}
+
+    # Filter accounting
+    n_kept = 0
+    n_dropped_true = 0
+    n_dropped_missing = 0
+    used_keys = set()   # (rel_path, csv_question) pairs that matched
+    missing_keys = []   # (rel_path, build_question) pairs absent from CSV
+    # For each missing entry whose path *is* in the CSV: closest CSV
+    # neighbour for the user to audit. Tuples of
+    # (distance, rel_path, build_q, csv_q, csv_flag).
+    fuzzy_log = []
 
     for task, clip_file, fid, idx in iter_clips(proc_root, raw_root):
         task_key = task
@@ -853,6 +1056,7 @@ def main(argv=None):
 
         video_id_base = clip_file.replace(".mp4", "")
         video_path = f"{video_root}/{task}/{clip_file}"
+        rel_path = f"{task}/{clip_file}"
 
         for qi, q in enumerate(matched):
             raw_answer = q.get("answer", "")
@@ -863,11 +1067,37 @@ def main(argv=None):
             )
             if (task_key, video_id) in EXCLUDED_ENTRIES:
                 continue
+            raw_question = q.get("question", "")
+            flag, csv_q, kind = lookup_review(review, rel_path, raw_question)
+            if kind == "missing":
+                neighbour = closest_csv_question(review, rel_path, raw_question)
+                # If the build's question doesn't exact-match but the closest
+                # CSV neighbour on the same path is already flagged TRUE,
+                # treat as TRUE and skip silently — that question has been
+                # rejected by review, no need to warn or diagnose.
+                if neighbour is not None and neighbour[2] == "TRUE":
+                    n_dropped_true += 1
+                    continue
+                missing_keys.append((rel_path, _norm_q(raw_question)))
+                n_dropped_missing += 1
+                if neighbour is not None:
+                    csv_q_near, dist, csv_flag_near = neighbour
+                    fuzzy_log.append(
+                        (dist, rel_path, _norm_q(raw_question),
+                         csv_q_near, csv_flag_near)
+                    )
+                continue
+            used_keys.add((rel_path, csv_q))
+            if flag == "TRUE":
+                n_dropped_true += 1
+                continue
+            # Empty or "FALSE" -> keep.
+
             seed_key = f"{task_key}:{video_id}"
             entry = build_entry(
                 video_id=video_id,
                 video_path=video_path,
-                question_text=q.get("question", ""),
+                question_text=raw_question,
                 ans_type=ans_type,
                 norm=norm,
                 seed_key=seed_key,
@@ -876,6 +1106,52 @@ def main(argv=None):
                 raw_entry=raw_entry,
             )
             data[task_key].append(entry)
+            n_kept += 1
+
+    # Warn for build entries not present in the CSV.
+    if missing_keys:
+        print(
+            f"\nWARNING: {len(missing_keys)} build (clip,question) pair(s) "
+            f"not found in review CSV — these were dropped:",
+            file=sys.stderr,
+        )
+        for rel, q in missing_keys:
+            print(q)
+            print(f"  {rel}  Q: {q!r}", file=sys.stderr)
+
+    # Diagnostic: for each missing entry whose path *is* in the CSV,
+    # show the closest CSV neighbour by edit distance. Sorted by
+    # ascending distance — wording-drift cases bubble to the top.
+    # if fuzzy_log:
+    #     fuzzy_log.sort(key=lambda x: x[0])
+    #     print(
+    #         f"\nFUZZY DIAGNOSTIC: {len(fuzzy_log)} missing entries "
+    #         f"have a near-neighbour in the CSV (sorted by edit distance):",
+    #         file=sys.stderr,
+    #     )
+    #     for dist, rel, build_q, csv_q, csv_flag in fuzzy_log:
+    #         print(
+    #             f"  d={dist:3d}  {rel}  flag={csv_flag!r}\n"
+    #             f"    build: {build_q[:140]!r}\n"
+    #             f"    csv  : {csv_q[:140]!r}",
+    #             file=sys.stderr,
+    #         )
+        # if len(fuzzy_log) > 30:
+        #     print(f"  ... +{len(fuzzy_log) - 30} more", file=sys.stderr)
+
+    # Informational: CSV rows that the build never touched.
+    all_csv_keys = {(rel, q) for rel, qs in review.items() for q, _ in qs}
+    csv_unused = sorted(all_csv_keys - used_keys)
+    if csv_unused:
+        print(
+            f"\nNOTE: {len(csv_unused)} CSV row(s) did not match any build "
+            f"entry (likely renamed/removed clips):",
+            file=sys.stderr,
+        )
+        for rel, q in csv_unused:
+            print(f"  {rel}  Q: {q[:120]!r}", file=sys.stderr)
+        # if len(csv_unused) > 10:
+        #     print(f"  ... +{len(csv_unused) - 10} more", file=sys.stderr)
 
     out = {
         "dataset_name": "vpi-ytb",
@@ -892,6 +1168,10 @@ def main(argv=None):
 
     # Summary
     total = sum(len(v) for v in data.values())
+    print(
+        f"\nfilter: kept={n_kept}, dropped_TRUE={n_dropped_true}, "
+        f"dropped_missing_from_csv={n_dropped_missing}"
+    )
     print(f"tasks: {len(data)}, total samples: {total}")
     for k in sorted(data):
         n_mcq = sum(1 for e in data[k] if e["choices"])

@@ -32,9 +32,35 @@ NUMERICAL_INSTRUCTIONS = {
 }
 
 
+def _doc_belongs_to_task(doc, source_task):
+    video_path = str(doc.get("video_path", "")).replace("\\", "/")
+    return source_task in video_path.split("/")
+
+
+def _get_source_docs(dataset, source_task):
+    if len(dataset) == 1:
+        data = dataset[0]["data"]
+        if isinstance(data, dict):
+            return data[source_task]
+        if isinstance(data, list):
+            return data
+
+    # The HF JSON loader expands merged_adv_qa.json's data dict into one row
+    # per task, so select the row whose video paths contain the source task.
+    matches = []
+    for row in dataset:
+        data = row["data"]
+        if isinstance(data, dict) and source_task in data:
+            matches.append(data[source_task])
+        elif isinstance(data, list) and data and _doc_belongs_to_task(data[0], source_task):
+            matches.append(data)
+
+    assert len(matches) == 1, f"Expected one source row for {source_task}, found {len(matches)}"
+    return matches[0]
+
+
 def _build_task_dataset(dataset, source_task):
-    assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    source_docs = dataset[0]["data"][source_task]
+    source_docs = _get_source_docs(dataset, source_task)
     flat_docs = []
     for doc in source_docs:
         question = doc["question"]
@@ -110,17 +136,22 @@ process_cube_docs                         = _make_processor("cube")
 process_cup_race_docs                     = _make_processor("cup_race")
 process_eating_contest_docs               = _make_processor("eating_contest")
 process_graffiti_docs                     = _make_processor("graffiti")
+process_horse_racing_docs                 = _make_processor("horse_racing")
 process_jump_rope_docs                    = _make_processor("jump_rope")
 process_latte_art_docs                    = _make_processor("latte_art")
 process_lego_docs                         = _make_processor("lego")
 process_marching_band_docs                = _make_processor("marching_band")
 process_matryoshka_docs                   = _make_processor("matryoshka")
+process_memory_card_docs                  = _make_processor("memory_card")
 process_n_back_docs                       = _make_processor("n_back")
+process_neuro_tracker_docs                = _make_processor("neuro_tracker")
 process_order_packing_docs                = _make_processor("order_packing")
 process_soccer_docs                       = _make_processor("soccer")
 process_strand_count_docs                 = _make_processor("strand_count")
 process_street_food_docs                  = _make_processor("street_food")
+process_table_tennis_docs                 = _make_processor("table_tennis")
 process_tennis_docs                       = _make_processor("tennis")
+process_volleyball_docs                   = _make_processor("volleyball")
 process_wii_docs                          = _make_processor("wii")
 
 
@@ -140,17 +171,19 @@ def _mcq_instruction(n_choices):
 def doc_to_text(doc, lmms_eval_specific_kwargs=None):
     kwargs = lmms_eval_specific_kwargs or {}
     pre_prompt = kwargs.get("pre_prompt", "")
-    post_prompt = kwargs.get("post_prompt", "")
     body = f"Watch the full video carefully before answering.\n\nQuestion: {doc['question']}"
     if doc["is_mcq"]:
         instruction = _mcq_instruction(len(doc["choices"]))
+        post_prompt = kwargs.get("mcq_post_prompt", "")
         if instruction:
             body += f"\n\n{instruction}"
+        return f"{pre_prompt}{body}\n\n{post_prompt}"
     else:
         instruction = NUMERICAL_INSTRUCTIONS.get(doc["source_task"])
+        post_prompt = kwargs.get("na_post_prompt", "")
         if instruction:
             body += f"\n\n{instruction}"
-    return f"{pre_prompt}{body}{post_prompt}"
+        return f"{pre_prompt}{body}\n\n{post_prompt}"
 
 
 def doc_to_target(doc):
