@@ -65,11 +65,24 @@ TILT_BOX_CHOICES = ["1", "2", "3", "4"]
 
 
 def merged_qa_data_tree(dataset):
-    assert len(dataset) == 1, f"Expected one source row, found {len(dataset)}"
-    data = dataset[0]["data"]
-    if isinstance(data, str):
-        return json.loads(data)
-    return data
+    """Return the task-name -> QA-list dict from *dataset*.
+
+    When HF's JSON loader expands the nested ``data`` dict into multiple
+    rows the task-name keys are lost.  Fall back to reading the source
+    JSON directly in that case.
+    """
+    if len(dataset) == 1:
+        data = dataset[0]["data"]
+        if isinstance(data, str):
+            return json.loads(data)
+        return data
+
+    checksums = getattr(dataset.info, "download_checksums", None) or {}
+    paths = [p for p in checksums if p.endswith(".json")]
+    assert paths, f"Cannot recover source JSON path from {len(dataset)}-row dataset"
+    with open(paths[0]) as f:
+        raw = json.load(f)
+    return raw["data"]
 
 
 

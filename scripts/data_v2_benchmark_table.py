@@ -8,7 +8,6 @@ from __future__ import annotations
 import json
 import re
 from collections import defaultdict
-from dataclasses import dataclass
 from pathlib import Path
 
 from data_v2_benchmark_constants import (
@@ -20,14 +19,11 @@ from data_v2_benchmark_constants import (
 )
 
 
-@dataclass(frozen=True)
-class ResultRef:
-    sort_key: str
-    path: Path
-
-
 def path_has_stretch(p: Path) -> bool:
     return STRETCH_RE.search(str(p)) is not None
+
+
+RESULTS_FILE_TS = re.compile(r"^(\d{8}_\d{6})_results\.json$")
 
 
 def run_sort_key(p: Path) -> str:
@@ -37,7 +33,10 @@ def run_sort_key(p: Path) -> str:
     m = LMMS_RUN.search(parent)
     if m:
         return m.group(1)
-    return parent
+    m = RESULTS_FILE_TS.match(p.name)
+    if m:
+        return m.group(1)
+    return f"{parent}\0{p.name}"
 
 
 def parse_duration(p: Path) -> str | None:
@@ -86,29 +85,24 @@ def load_task_scores(path: Path) -> dict[str, float]:
     return out
 
 
-def pick_best_per_model_duration(root: Path, include_stretch: bool) -> dict[tuple[str, str], Path]:
-    best: dict[tuple[str, str], ResultRef] = {}
+def build_matrix(
+    root: Path,
+    include_stretch: bool,
+) -> dict[str, dict[str, dict[str, float]]]:
+    best: dict[tuple[str, str, str], tuple[str, float]] = {}
     for p in iter_result_files(root, include_stretch):
         mk = model_key_from_path(root, p)
         dur = parse_duration(p)
         assert mk is not None
         assert dur is not None
         sk = run_sort_key(p)
-        slot = (mk, dur)
-        if slot not in best or sk > best[slot].sort_key:
-            best[slot] = ResultRef(sk, p)
-    return {k: v.path for k, v in best.items()}
-
-
-def build_matrix(
-    root: Path,
-    include_stretch: bool,
-) -> dict[str, dict[str, dict[str, float]]]:
-    picked = pick_best_per_model_duration(root, include_stretch)
+        for tid, acc in load_task_scores(p).items():
+            slot = (mk, dur, tid)
+            if slot not in best or sk > best[slot][0]:
+                best[slot] = (sk, acc)
     matrix: dict[str, dict[str, dict[str, float]]] = defaultdict(lambda: defaultdict(dict))
-    for (model_key, duration), path in picked.items():
-        for tid, acc in load_task_scores(path).items():
-            matrix[model_key][tid][duration] = acc
+    for (model_key, duration, tid), (_sk, acc) in best.items():
+        matrix[model_key][tid][duration] = acc
     return matrix
 
 
