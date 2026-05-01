@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_recorded_stretch_0p2s_showing_card_most
+process_docs: !function utils.process_showing_card_most_docs
+include: _default_template_yaml

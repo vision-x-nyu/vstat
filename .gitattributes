@@ -1,0 +1,6 @@
+# Collapse 3-line per-sub-task YAMLs in PR diffs (GitHub treats
+# linguist-generated files as generated, hiding the diff by default).
+# The substantive files (group YAML, _default_template_yaml, utils.py)
+# stay expanded.
+lmms_eval/tasks/longvid-reasoning-eval_*/*.yaml linguist-generated=true
+lmms_eval/tasks/longvid-reasoning-eval_*/longvid-reasoning-eval_*.yaml linguist-generated=false

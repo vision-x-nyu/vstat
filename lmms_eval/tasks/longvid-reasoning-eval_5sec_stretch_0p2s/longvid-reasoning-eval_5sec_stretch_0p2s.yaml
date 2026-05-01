@@ -1,0 +1,20 @@
+group: longvid-reasoning-eval_5sec_stretch_0p2s
+task:
+  - longvid-reasoning-eval_5sec_stretch_0p2s_shell_game
+  - longvid-reasoning-eval_5sec_stretch_0p2s_shell_game_rotate
+  - longvid-reasoning-eval_5sec_stretch_0p2s_tighten_untighten
+  - longvid-reasoning-eval_5sec_stretch_0p2s_memory_sliding_puzzle
+  - longvid-reasoning-eval_5sec_stretch_0p2s_hidden_dice_roll
+  - longvid-reasoning-eval_5sec_stretch_0p2s_tilt_box
+  - longvid-reasoning-eval_5sec_stretch_0p2s_rhythm_game
+  - longvid-reasoning-eval_5sec_stretch_0p2s_morse
+  - longvid-reasoning-eval_5sec_stretch_0p2s_bulb
+  - longvid-reasoning-eval_5sec_stretch_0p2s_ring_toss
+  - longvid-reasoning-eval_5sec_stretch_0p2s_make_coffee
+  - longvid-reasoning-eval_5sec_stretch_0p2s_sugar_new
+  - longvid-reasoning-eval_5sec_stretch_0p2s_block_counting
+  - longvid-reasoning-eval_5sec_stretch_0p2s_opaque
+  - longvid-reasoning-eval_5sec_stretch_0p2s_hockey_own_goal
+  - longvid-reasoning-eval_5sec_stretch_0p2s_hockey_score
+  - longvid-reasoning-eval_5sec_stretch_0p2s_funnel_ball_longest
+  - longvid-reasoning-eval_5sec_stretch_0p2s_pinwheel_longest

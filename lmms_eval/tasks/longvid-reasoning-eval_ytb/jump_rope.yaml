@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_jump_rope
+process_docs: !function utils.process_jump_rope_docs
+include: _default_template_yaml

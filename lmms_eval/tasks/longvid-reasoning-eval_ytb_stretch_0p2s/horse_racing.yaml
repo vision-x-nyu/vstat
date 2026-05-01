@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_stretch_0p2s_horse_racing
+process_docs: !function utils.process_horse_racing_docs
+include: _default_template_yaml

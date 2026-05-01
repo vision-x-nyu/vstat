@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_recorded_cup_stacking_3rd
+process_docs: !function utils.process_cup_stacking_3rd_docs
+include: _default_template_yaml

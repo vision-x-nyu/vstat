@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_20sec_stretch_0p2s_hockey_longest_game
+process_docs: !function utils.process_hockey_longest_game_docs
+include: _default_template_yaml
