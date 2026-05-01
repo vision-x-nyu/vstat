@@ -4,7 +4,6 @@ import importlib
 import os
 import sys
 import warnings
-from typing import Literal
 
 from loguru import logger
 
@@ -101,26 +100,6 @@ AVAILABLE_SIMPLE_MODELS = {
     "xcomposer2d5": "XComposer2D5",
 }
 
-AVAILABLE_CHAT_TEMPLATE_MODELS = {
-    "bagel_lmms_engine": "BagelLmmsEngine",
-    "internvl_hf": "InternVLHf",
-    "llava_hf": "LlavaHf",
-    "nanovlm": "NanoVLM",
-    "phi4_multimodal": "Phi4",
-    "qwen3_vl": "Qwen3_VL",
-    "qwen2_5_vl": "Qwen2_5_VL",
-    "thyme": "Thyme",
-    "openai": "OpenAICompatible",
-    "vllm": "VLLM",
-    "vllm_generate": "VLLMGenerate",
-    "sglang": "Sglang",
-    "huggingface": "Huggingface",
-    "async_openai": "AsyncOpenAIChat",
-    "async_hf_model": "AsyncHFModel",
-    "longvila": "LongVila",
-    "llava_onevision1_5": "Llava_OneVision1_5",
-}
-
 MODEL_ALIASES: dict[str, tuple[str, ...]] = {
     "openai": ("openai_compatible", "openai_compatible_chat"),
     "async_openai": ("async_openai_compatible_chat", "async_openai_compatible"),
@@ -128,30 +107,21 @@ MODEL_ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 
-def _build_class_path(
-    model_name: str,
-    model_type: Literal["simple", "chat"],
-    class_name: str,
-) -> str:
+def _build_class_path(model_name: str, class_name: str) -> str:
     if "." in class_name:
         return class_name
-    return f"lmms_eval.models.{model_type}.{model_name}.{class_name}"
+    return f"lmms_eval.models.simple.{model_name}.{class_name}"
 
 
 def _build_builtin_manifests() -> list[ModelManifest]:
-    model_ids = sorted(
-        set(AVAILABLE_SIMPLE_MODELS) | set(AVAILABLE_CHAT_TEMPLATE_MODELS),
-    )
     manifests: list[ModelManifest] = []
-    for model_id in model_ids:
-        simple_class = AVAILABLE_SIMPLE_MODELS.get(model_id)
-        chat_class = AVAILABLE_CHAT_TEMPLATE_MODELS.get(model_id)
+    for model_id, simple_class in sorted(AVAILABLE_SIMPLE_MODELS.items()):
         aliases = MODEL_ALIASES.get(model_id, ())
         manifests.append(
             ModelManifest(
                 model_id=model_id,
-                simple_class_path=(_build_class_path(model_id, "simple", simple_class) if simple_class else None),
-                chat_class_path=(_build_class_path(model_id, "chat", chat_class) if chat_class else None),
+                simple_class_path=_build_class_path(model_id, simple_class),
+                chat_class_path=None,
                 aliases=aliases,
             ),
         )
@@ -203,7 +173,7 @@ def _build_available_models_preferred() -> dict[str, str]:
     model_map: dict[str, str] = {}
     for model_id in MODEL_REGISTRY_V2.list_canonical_model_ids():
         manifest = MODEL_REGISTRY_V2.get_manifest(model_id)
-        class_path = manifest.chat_class_path or manifest.simple_class_path
+        class_path = manifest.simple_class_path
         if class_path:
             model_map[model_id] = class_path.rsplit(".", 1)[-1]
     return model_map
