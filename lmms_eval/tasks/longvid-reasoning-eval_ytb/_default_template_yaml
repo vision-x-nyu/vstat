@@ -1,7 +1,7 @@
 dataset_path: json
 dataset_kwargs:
   data_files:
-    test: /nas2/benchmarks/vpi/ytb-vids/merged_qa/merged_filtered_qa.json
+    test: /nas2/benchmarks/vpi/ytb-vids/merged_qa/merged_filtered_redact_qa.json
 task: longvid-reasoning-eval_ytb
 test_split: test
 output_type: generate_until
@@ -26,7 +26,8 @@ generation_kwargs:
 lmms_eval_specific_kwargs:
   default:
     pre_prompt: ""
-    mcq_post_prompt: "Answer with the option's letter from the given choices directly."
+    # mcq_post_prompt: "Answer with the option's letter from the given choices directly."
+    mcq_post_prompt: "Do not response anything other than a single letter from the given choices!"
     na_post_prompt: "Do not response anything other than a single number!"
 metadata:
   version: 0.0
