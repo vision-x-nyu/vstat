@@ -106,13 +106,9 @@ class Qwen3_VL(lmms):
                 DistributedType.FSDP,
                 DistributedType.MULTI_GPU,
             ], "Unsupported distributed type provided. Only DDP and FSDP are supported."
-            if accelerator.distributed_type == DistributedType.FSDP:
-                self._model = accelerator.prepare(self.model)
-            else:
-                self._model = accelerator.prepare_model(self.model, evaluation_mode=True)
             self.accelerator = accelerator
             if self.accelerator.is_local_main_process:
-                eval_logger.info(f"Using {accelerator.num_processes} devices with data parallelism")
+                eval_logger.info(f"Using {accelerator.num_processes} devices with independent data parallel inference")
             self._rank = self.accelerator.local_process_index
             self._world_size = self.accelerator.num_processes
         else:
