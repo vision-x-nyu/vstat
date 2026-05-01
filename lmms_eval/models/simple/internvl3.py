@@ -208,8 +208,22 @@ def load_video(
     num_patches_list: List[int] = []
     transform = build_transform(input_size=input_size)
     frame_indices = get_index(bound, fps, max_frame, first_idx=0, num_segments=num_segments)
+
+    # Sequential read with skip: avoids decord seek_accurate deadlocks on
+    # videos containing corrupted frames (random vr[i] access can hang inside
+    # seek_accurate when the demuxer tries to recover from a corrupt region).
+    unique_targets = sorted({int(idx) for idx in frame_indices})
+    frames_by_idx = {}
+    cursor = 0
+    for target in unique_targets:
+        while cursor < target:
+            vr.next()
+            cursor += 1
+        frames_by_idx[target] = vr.next().asnumpy()
+        cursor += 1
+
     for frame_index in frame_indices:
-        img = Image.fromarray(vr[frame_index].asnumpy()).convert("RGB")
+        img = Image.fromarray(frames_by_idx[int(frame_index)]).convert("RGB")
         tiles = dynamic_preprocess(img, image_size=input_size, use_thumbnail=True, max_num=max_num)
         pixel_values = torch.stack([transform(tile) for tile in tiles])
         num_patches_list.append(pixel_values.shape[0])
@@ -293,9 +307,21 @@ class InternVL3(lmms):
                 DistributedType.MULTI_GPU,
                 DistributedType.DEEPSPEED,
             ], "Unsupported distributed type provided. Only DDP and FSDP are supported."
+            if accelerator.distributed_type == DistributedType.DEEPSPEED:
+                kwargs = {
+                    "train_micro_batch_size_per_gpu": self.batch_size_per_gpu,
+                    "train_batch_size": self.batch_size_per_gpu * accelerator.num_processes,
+                }
+                AcceleratorState().deepspeed_plugin.deepspeed_config_process(must_match=True, **kwargs)
+                eval_logger.info("Detected that you are using DistributedType.DEEPSPEED. Make sure you run `accelerate config` and set zero stage to 0")
+
+            if accelerator.distributed_type == DistributedType.FSDP or accelerator.distributed_type == DistributedType.DEEPSPEED:
+                self._model = accelerator.prepare(self.model)
+            else:
+                self._model = accelerator.prepare_model(self.model, evaluation_mode=True)
             self.accelerator = accelerator
             if self.accelerator.is_local_main_process:
-                eval_logger.info(f"Using {accelerator.num_processes} devices with independent data parallel inference")
+                eval_logger.info(f"Using {accelerator.num_processes} devices with data parallelism")
             self._rank = self.accelerator.local_process_index
             self._world_size = self.accelerator.num_processes
         elif self._use_auto_device_map:
