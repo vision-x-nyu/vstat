@@ -13,7 +13,7 @@ task:
   - longvid-reasoning-eval_ytb_horse_racing
   - longvid-reasoning-eval_ytb_latte_art
   - longvid-reasoning-eval_ytb_lego
-  - longvid-reasoning-eval_ytb_marching_band
+  # - longvid-reasoning-eval_ytb_marching_band
   - longvid-reasoning-eval_ytb_matryoshka
   - longvid-reasoning-eval_ytb_memory_card
   - longvid-reasoning-eval_ytb_neuro_tracker
