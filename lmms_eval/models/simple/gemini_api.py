@@ -3,6 +3,7 @@ import os
 import pathlib
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import List, Tuple
 
 from accelerate import Accelerator, DistributedType
@@ -41,6 +42,7 @@ class GeminiAPI(lmms):
         timeout: int = 120,
         interleave: bool = False,
         no_audio: bool = False,
+        concurrency: int = 1,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -48,6 +50,7 @@ class GeminiAPI(lmms):
         self.timeout = timeout
         self.interleave = interleave
         self.no_audio = no_audio
+        self.concurrency = max(1, int(concurrency))
 
         accelerator = Accelerator()
         if accelerator.num_processes > 1:
@@ -120,6 +123,37 @@ class GeminiAPI(lmms):
                     eval_logger.error(f"Error converting video: {str(e)}")
         return images
 
+    def _upload_video_local(self, video_path, local_pool):
+        """Like ``encode_video`` but records the upload into a caller-owned list
+        so concurrent workers can clean up their own files without racing on
+        ``self.video_pool``."""
+        uploaded_obj = client.files.upload(file=video_path)
+        while uploaded_obj.state == "PROCESSING":
+            eval_logger.info(f"Waiting for video upload to become ACTIVE: {video_path}")
+            time.sleep(5)
+            uploaded_obj = client.files.get(name=uploaded_obj.name)
+        if uploaded_obj.state == "FAILED":
+            raise RuntimeError(f"Video upload failed for {video_path}")
+        local_pool.append(uploaded_obj)
+        return uploaded_obj
+
+    def _convert_modality_local(self, images, local_pool):
+        """Concurrent-safe variant of ``convert_modality``: video uploads go to
+        ``local_pool`` instead of the shared ``self.video_pool``. Preserves
+        ``no_audio`` behaviour from the sequential path."""
+        for idx, img in enumerate(images):
+            if isinstance(img, dict) and "sampling_rate" in img:  # audio
+                if self.no_audio:
+                    images[idx] = None
+                    continue
+                images[idx] = self.encode_audio(img)
+            elif isinstance(img, str):  # video
+                try:
+                    images[idx] = self._upload_video_local(img, local_pool)
+                except Exception as e:
+                    eval_logger.error(f"Error converting video: {str(e)}")
+        return images
+
     def construct_interleaved_input(self, content, media):
         pattern = r"<media_(\d+)>"
         parts = re.split(pattern, content)
@@ -134,49 +168,49 @@ class GeminiAPI(lmms):
 
         return result
 
-    def generate_until(self, requests) -> List[GenerationResult]:
-        res = []
-        pbar = tqdm(total=len(requests), disable=(self.rank != 0), desc="Model Responding")
+    def _process_one(self, args) -> GenerationResult:
+        """Worker function for a single request. Uploads its visuals to a
+        per-call file pool so concurrent workers don't race on
+        ``self.video_pool``. Mirrors the sequential body."""
+        contexts, gen_kwargs, doc_to_visual, doc_id, task, split = args
 
-        def get_uuid(task, split, doc_id):
-            return f"{task}___{split}___{doc_id}"
+        if is_budget_exceeded():
+            return GenerationResult(text="", token_counts=None)
 
-        for contexts, gen_kwargs, doc_to_visual, doc_id, task, split in [reg.args for reg in requests]:
-            if is_budget_exceeded():
-                res.append(GenerationResult(text="", token_counts=None))
-                pbar.update(1)
-                continue
-            if "max_new_tokens" not in gen_kwargs:
-                gen_kwargs["max_new_tokens"] = 65536
-            if "temperature" not in gen_kwargs:
-                gen_kwargs["temperature"] = 0
+        if "max_new_tokens" not in gen_kwargs:
+            gen_kwargs["max_new_tokens"] = 65536
+        if "temperature" not in gen_kwargs:
+            gen_kwargs["temperature"] = 0
 
-            # Build config with thinking enabled (no budget limit)
-            config = types.GenerateContentConfig(
-                maxOutputTokens=gen_kwargs["max_new_tokens"],
-                temperature=gen_kwargs["temperature"],
-                thinkingConfig=types.ThinkingConfig(
-                    includeThoughts=True,
-                ),
-                safetySettings=[
-                    types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="OFF"),
-                    types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="OFF"),
-                    types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
-                    types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
-                ],
-            )
+        # Build config with thinking enabled (no budget limit)
+        config = types.GenerateContentConfig(
+            maxOutputTokens=gen_kwargs["max_new_tokens"],
+            temperature=gen_kwargs["temperature"],
+            thinkingConfig=types.ThinkingConfig(
+                includeThoughts=True,
+            ),
+            safetySettings=[
+                types.SafetySetting(category="HARM_CATEGORY_DANGEROUS_CONTENT", threshold="OFF"),
+                types.SafetySetting(category="HARM_CATEGORY_HATE_SPEECH", threshold="OFF"),
+                types.SafetySetting(category="HARM_CATEGORY_HARASSMENT", threshold="OFF"),
+                types.SafetySetting(category="HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold="OFF"),
+            ],
+        )
 
+        local_pool = []
+        content = ""
+        token_counts = None
+        reasoning = None
+        try:
             visuals = [doc_to_visual(self.task_dict[task][split][doc_id])]
             visuals = self.flatten(visuals)
-            visuals = [v for v in self.convert_modality(visuals) if v is not None]
+            visuals = [v for v in self._convert_modality_local(visuals, local_pool) if v is not None]
 
             if self.interleave:
                 message = self.construct_interleaved_input(contexts, visuals)
             else:
                 message = [contexts] + visuals
 
-            token_counts = None
-            reasoning = None
             for attempt in range(5):
                 try:
                     response = client.models.generate_content(
@@ -231,18 +265,45 @@ class GeminiAPI(lmms):
                     reasoning = "".join(thought_parts) if thought_parts else None
                     break
                 except Exception as e:
-                    eval_logger.info(f"Attempt {attempt + 1} failed with error: {str(e)}")
+                    eval_logger.info(f"Attempt {attempt + 1} failed for doc_id={doc_id}: {str(e)}")
                     if attempt < 5 - 1:
                         time.sleep(NUM_SECONDS_TO_SLEEP)
                     else:
-                        eval_logger.error(f"All 5 attempts failed. Last error message: {str(e)}")
+                        eval_logger.error(f"All 5 attempts failed for doc_id={doc_id}. Last error: {str(e)}")
                         content = ""
                         token_counts = None
                         reasoning = None
-            res.append(GenerationResult(text=content, token_counts=token_counts, reasoning=reasoning))
-            pbar.update(1)
+        finally:
+            for f in local_pool:
+                try:
+                    client.files.delete(name=f.name)
+                except Exception:
+                    pass
 
-            self.free_video()
+        return GenerationResult(text=content, token_counts=token_counts, reasoning=reasoning)
+
+    def generate_until(self, requests) -> List[GenerationResult]:
+        n = len(requests)
+        res: List[GenerationResult] = [None] * n
+        pbar = tqdm(total=n, disable=(self.rank != 0), desc="Model Responding")
+
+        args_list = [reg.args for reg in requests]
+
+        if self.concurrency <= 1:
+            for i, args in enumerate(args_list):
+                res[i] = self._process_one(args)
+                pbar.update(1)
+        else:
+            with ThreadPoolExecutor(max_workers=self.concurrency) as pool:
+                future_to_idx = {pool.submit(self._process_one, args): i for i, args in enumerate(args_list)}
+                for fut in as_completed(future_to_idx):
+                    i = future_to_idx[fut]
+                    try:
+                        res[i] = fut.result()
+                    except Exception as e:
+                        eval_logger.error(f"Worker crashed for request idx={i}: {e}")
+                        res[i] = GenerationResult(text="", token_counts=None)
+                    pbar.update(1)
 
         pbar.close()
         return res
