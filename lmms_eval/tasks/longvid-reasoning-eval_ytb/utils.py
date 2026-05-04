@@ -167,8 +167,14 @@ process_tighten_untighten_docs            = _make_processor("tighten_untighten")
 process_tilt_v2_docs                      = _make_processor("tilt_v2")
 
 
+_LEGACY_VIDEO_ROOT = "/nas2/benchmarks/vpi/ytb-vids/processed/"
+_CURRENT_VIDEO_ROOT = "/nas2/benchmarks/vpi/real/processed/"
+
+
 def doc_to_visual(doc):
     video_path = doc["video_path"]
+    if video_path.startswith(_LEGACY_VIDEO_ROOT):
+        video_path = _CURRENT_VIDEO_ROOT + video_path[len(_LEGACY_VIDEO_ROOT):]
     assert os.path.exists(video_path), f"Missing video file: {video_path}"
     return [video_path]
 
