@@ -156,6 +156,15 @@ process_table_tennis_docs                 = _make_processor("table_tennis")
 process_tennis_docs                       = _make_processor("tennis")
 process_volleyball_docs                   = _make_processor("volleyball")
 process_wii_docs                          = _make_processor("wii")
+process_block_counting_docs               = _make_processor("block_counting")
+process_dice_docs                         = _make_processor("dice")
+process_funnel_ball_docs                  = _make_processor("funnel_ball")
+process_hockey_docs                       = _make_processor("hockey")
+process_make_coffee_docs                  = _make_processor("make_coffee")
+process_shell_game_rotate_docs            = _make_processor("shell_game_rotate")
+process_shuffle_puzzle_docs               = _make_processor("shuffle_puzzle")
+process_tighten_untighten_docs            = _make_processor("tighten_untighten")
+process_tilt_v2_docs                      = _make_processor("tilt_v2")
 
 
 def doc_to_visual(doc):

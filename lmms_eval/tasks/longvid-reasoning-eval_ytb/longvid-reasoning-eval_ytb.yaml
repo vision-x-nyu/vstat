@@ -45,3 +45,12 @@ task:
   - longvid-reasoning-eval_ytb_tennis
   - longvid-reasoning-eval_ytb_tilt_box
   - longvid-reasoning-eval_ytb_volleyball
+  - longvid-reasoning-eval_ytb_block_counting
+  - longvid-reasoning-eval_ytb_dice
+  - longvid-reasoning-eval_ytb_funnel_ball
+  - longvid-reasoning-eval_ytb_hockey
+  - longvid-reasoning-eval_ytb_make_coffee
+  - longvid-reasoning-eval_ytb_shell_game_rotate
+  - longvid-reasoning-eval_ytb_shuffle_puzzle
+  - longvid-reasoning-eval_ytb_tighten_untighten
+  - longvid-reasoning-eval_ytb_tilt_v2

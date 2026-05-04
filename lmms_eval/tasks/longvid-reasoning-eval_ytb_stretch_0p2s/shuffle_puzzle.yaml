@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_stretch_0p2s_shuffle_puzzle
+process_docs: !function utils.process_shuffle_puzzle_docs
+include: _default_template_yaml
