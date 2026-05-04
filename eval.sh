@@ -32,9 +32,9 @@ export LMMS_EVAL_LAUNCHER=python
 MODEL_ARGS="model_version=${MODEL_VERSION},timeout=120,no_audio=True,thinking_budget=${THINKING_BUDGET},response_persistent_folder=${OUTPUT_DIR}/cache"
 
 SUBTASKS=(
-    "longvid-reasoning-eval_ytb"
+    # "longvid-reasoning-eval_ytb"
     # "longvid-reasoning-eval_recorded"
-    # "longvid-reasoning-eval_ytb_stretch_0p2s"
+    "longvid-reasoning-eval_ytb_stretch_0p2s"
 )
 
 for TASK in "${SUBTASKS[@]}"; do

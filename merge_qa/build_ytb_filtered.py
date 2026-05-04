@@ -15,6 +15,8 @@ Other flags:
          (default: <repo>/sheets/vpi_redesign_clean_1.csv).
   --out  Output JSON path
          (default: <base>/merged_qa/merged_qa_filtered.json).
+  --force
+         Keep build entries that are not found in the review CSV.
 
 CSV layout:
   - Rows 1-3 are header/comment rows and are skipped.
@@ -47,7 +49,8 @@ DEFAULT_CSV = os.path.join(
 _CSV_HEADER_ROWS = 3
 # Last column index holding the keep/drop flag.
 # _CSV_FLAG_COL = 8  # <--clean_1 version
-_CSV_FLAG_COL = 11  # <--clean_2 version
+# _CSV_FLAG_COL = 11  # <--clean_2 version
+_CSV_FLAG_COL = 10  # <--clean_3 version
 
 # Path prefix the review CSV uses for ytb-vids clips. Stripped to
 # `<task>/<clip>.mp4` for matching, so a different `--video-root` on the
@@ -295,7 +298,10 @@ EXCLUDED_TASKS = {
     # Circuit procedural answers (domain-specific, no automatable distractors).
     "circuit",
     "predictive_tennis",
-    "sokoban"
+    # "wii",
+    # "street_food",
+    # "n_back"
+    # "sokoban"
 }
 
 # (task_key, video_id) pairs that should be excluded from merged_qa.
@@ -318,7 +324,7 @@ EXCLUDED_ENTRIES = {
 
 
 def _sequence_flip_distractors(correct_str, sep="->", bracket=False,
-                               distractors_pool=None):
+                               distractors_pool=None, len_variation=False):
     """Generate distractors by flipping exactly one element in a sequence.
 
     Works for both arrow-separated ("A -> B -> A") and bracket/comma
@@ -330,6 +336,9 @@ def _sequence_flip_distractors(correct_str, sep="->", bracket=False,
     If all elements in the sequence are identical, ``distractors_pool``
     (a list of alternative element strings) is used instead.  Without it
     the function returns None.
+
+    If ``len_variation`` is true, also creates distractors by deleting one
+    sequence element or inserting one alternative element.
     """
     inner = correct_str
     if bracket:
@@ -359,37 +368,70 @@ def _sequence_flip_distractors(correct_str, sep="->", bracket=False,
                   file=sys.stderr)
             return None
 
-    distractors = []
+    def format_sequence(seq):
+        seq = [str(x).lower() for x in seq]
+        if bracket:
+            return "[" + ", ".join(seq) + "]"
+        return f" {sep} ".join(seq)
+
+    flip_distractors = []
+    length_distractors = []
     seen_candidates: set[str] = set()
+
+    def add_candidate(candidate, target):
+        canon = candidate.lower()
+        if canon != correct_str.lower() and canon not in seen_candidates:
+            seen_candidates.add(canon)
+            target.append(candidate)
+
     for i, elem in enumerate(elements):
         for alt in pool:
             if alt.lower() == elem.lower():
                 continue
             flipped = elements[:i] + [alt] + elements[i + 1:]
-            if bracket:
-                candidate = "[" + ", ".join(flipped) + "]"
-            else:
-                candidate = f" {sep} ".join(flipped)
-            canon = candidate.lower()
-            if canon != correct_str.lower() and canon not in seen_candidates:
-                seen_candidates.add(canon)
-                distractors.append(candidate)
+            add_candidate(format_sequence(flipped), flip_distractors)
 
+    if len_variation:
+        for i in range(len(elements)):
+            shortened = elements[:i] + elements[i + 1:]
+            if shortened:
+                add_candidate(format_sequence(shortened), length_distractors)
+
+        for i in range(len(elements) + 1):
+            for alt in pool:
+                lengthened = elements[:i] + [alt] + elements[i:]
+                add_candidate(format_sequence(lengthened), length_distractors)
+
+    distractors = length_distractors + flip_distractors if len_variation else flip_distractors
     if not distractors:
         return None
     rng = random.Random(f"seq_flip:{correct_str}")
-    rng.shuffle(distractors)
-    return correct_str, distractors[:3]
+    if len_variation:
+        rng.shuffle(length_distractors)
+        rng.shuffle(flip_distractors)
+        distractors = length_distractors + flip_distractors
+    else:
+        rng.shuffle(distractors)
+    return format_sequence(elements), distractors[:3]
 
 
 def _tuple_flip_distractors(correct_str, bracket=False,
-                            distractors_pool=None):
+                            distractors_pool=None,
+                            lower=None, upper=None,
+                            distinct=False):
     """Generate distractors by changing one integer element by +/- 1.
 
     Tuple elements are expected to be scalar integers. Works for both
     arrow-separated ("1 -> 2 -> 3") and tuple/comma ("(1, 2, 3)") formats.
     Each generated distractor has edit distance 1 from the correct tuple:
     exactly one integer is modified, and that modification is either +1 or -1.
+
+    ``lower`` / ``upper`` clamp flipped values so distractors stay within a
+    valid range (e.g. lower=0 prevents negative counts).
+
+    If ``distinct`` is true, generated distractor tuples are only kept when
+    all integer elements are unique.
+
     Returns (correct, distractors[:3]) or None.
     """
     if bracket:
@@ -421,10 +463,17 @@ def _tuple_flip_distractors(correct_str, bracket=False,
     seen_candidates: set[str] = set()
     for i, value in enumerate(values):
         for delta in (-1, 1):
+            new_val = value + delta
+            if lower is not None and new_val < lower:
+                continue
+            if upper is not None and new_val > upper:
+                continue
             flipped = values[:]
-            flipped[i] = value + delta
+            flipped[i] = new_val
+            if distinct and len(set(flipped)) != len(flipped):
+                continue
             if bracket:
-                candidate = prefix + ", ".join(str(v) for v in flipped) + suffix
+                candidate = prefix + ",".join(str(v) for v in flipped) + suffix
             else:
                 candidate = " -> ".join(str(v) for v in flipped)
             if candidate != correct_str and candidate not in seen_candidates:
@@ -447,6 +496,26 @@ def _boxing_override(ctx):
         if result is not None:
             return result
         return None
+
+
+def _cooking_override(ctx):
+    if ctx["task_key"] != "cooking":
+        return None
+    if "sequence" in ctx["question"].lower():
+        correct = ctx["raw_answer"].strip().rstrip(".").strip()
+        result = _sequence_flip_distractors(correct, bracket=True)
+        if result is not None:
+            return result
+        return None
+    
+    if "row-wise labels" in ctx["question"].lower():
+        correct = ctx["raw_answer"].strip().rstrip(".").strip()
+        result = _tuple_flip_distractors(correct, bracket=True, lower=1, upper=14, distinct=True)
+        if result is not None:
+            return result
+        return None
+    
+    return None
 
 
 def _cup_race_override(ctx):
@@ -564,16 +633,16 @@ _GRAFFITI_ALPHABET_LOOKUP = {
 }
 
 _GRAFFITI_NUMBERS_LOOKUP = {
-    '0': ['8', 'O'],   # oval -> 8 double-oval, O letter                                                  
-    '1': ['7', 'I'],   # vertical -> 7 vertical+hook, I vertical bar                                             
-    '2': ['7', 'Z'],   # curve+diagonal foot -> 7 diagonal, Z same top/bottom bars + diagonal                  
-    '3': ['8', 'E'],   # right-side bumps -> 8 full loops, E mirrored-3                                        
-    '4': ['9', 'A'],   # loop+descending stroke -> 9 loop+tail, A crossbar+diagonals                             
-    '5': ['6', 'S'],   # curve+shelf -> 6 closed loop, S mirrored-5                                              
-    '6': ['9', 'G'],   # loop+tail -> 9 mirror-image, G similar open loop+shelf                                  
-    '7': ['1', 'T'],   # top bar+diagonal -> 1 simpler vertical, T top bar+stem                                  
-    '8': ['3', 'B'],   # two stacked loops -> 3 right bumps, B two right bumps                                   
-    '9': ['6', 'P'],   # loop+descending tail -> 6 mirror-image, P loop+stem
+    '0': ['8', 'O', 'P'],   # oval -> 8 double-oval, O letter                                                  
+    '1': ['7', 'I', 'L'],   # vertical -> 7 vertical+hook, I vertical bar                                             
+    '2': ['7', 'Z', 'N'],   # curve+diagonal foot -> 7 diagonal, Z same top/bottom bars + diagonal                  
+    '3': ['8', 'E', 'S'],   # right-side bumps -> 8 full loops, E mirrored-3                                        
+    '4': ['9', 'A', '6'],   # loop+descending stroke -> 9 loop+tail, A crossbar+diagonals                             
+    '5': ['6', 'S', 'G'],   # curve+shelf -> 6 closed loop, S mirrored-5                                              
+    '6': ['9', 'G', '4'],   # loop+tail -> 9 mirror-image, G similar open loop+shelf                                  
+    '7': ['1', 'T', 'J'],   # top bar+diagonal -> 1 simpler vertical, T top bar+stem                                  
+    '8': ['3', 'B', 'K'],   # two stacked loops -> 3 right bumps, B two right bumps                                   
+    '9': ['6', 'P', 'Q'],   # loop+descending tail -> 6 mirror-image, P loop+stem
 }
 
 def _graffiti_adv_override(ctx):
@@ -584,6 +653,9 @@ def _graffiti_adv_override(ctx):
     Numeric answers are already normalized to 'numerical' upstream.
     """
     if ctx["task_key"] != "graffiti":
+        return None
+    
+    if "How many" in ctx["question"].lower():
         return None
     # Strip trailing period / whitespace so "R.", "WEKBOY." etc. classify
     # correctly.
@@ -613,6 +685,14 @@ def _graffiti_adv_override(ctx):
         correct = raw.upper()
         rng = random.Random(f"graffiti_letter:{correct}")
         pool = _GRAFFITI_ALPHABET_LOOKUP[correct][:]
+        rng.shuffle(pool)
+        return correct, pool[:3]
+    
+    # Single number
+    if len(raw) == 1 and raw.isdigit():
+        correct = raw
+        rng = random.Random(f"graffiti_number:{correct}")
+        pool = _GRAFFITI_NUMBERS_LOOKUP[correct][:]
         rng.shuffle(pool)
         return correct, pool[:3]
 
@@ -772,7 +852,7 @@ def _neuro_tracker_override(ctx):
     if "format" not in ctx["question"].lower():
         return None
     correct = ctx["raw_answer"].strip().rstrip(".").strip()
-    result = _tuple_flip_distractors(correct, bracket=True)
+    result = _tuple_flip_distractors(correct, bracket=True, lower=1, upper=8, distinct=True)
     if result is not None:
         return result
     return None
@@ -808,6 +888,30 @@ def _order_packing_override(ctx):
         return None
     distractors = [p for p in pool if p != correct]
     return correct, distractors
+
+
+SOKOBAN_POOL = {
+    "0001_pt2_q4": ['box 1', 'box 2', 'box 3'],
+    "0001_pt2_q2": ['box 1', 'box 2', 'box 3'],
+}
+
+
+def _sokoban_override(ctx):
+    if ctx["task_key"] != "sokoban":
+        return None
+    if "which indexed box" not in ctx["question"].lower():
+        return None
+    correct = ctx["raw_answer"].strip().rstrip(".").strip()
+    pool = SOKOBAN_POOL.get(ctx["video_id"], None) or ['box 1', 'box 2', 'box 3', 'box 4', 'box 5', 'box 6']
+    correct_in_pool = next((p for p in pool if p.lower() == correct.lower()), None)
+    if correct_in_pool is None:
+        print(ctx["question"], correct)
+        return None
+    distractors = [p for p in pool if p != correct_in_pool]
+    rng = random.Random(f"sokoban:{ctx['video_id']}:{correct_in_pool}")
+    rng.shuffle(distractors)
+
+    return correct_in_pool, distractors[:3]
 
 
 def _table_tennis_override(ctx):
@@ -897,6 +1001,7 @@ def _volleyball_override(ctx):
 
 OVERRIDES = [
     _boxing_override,
+    _cooking_override,
     _cup_race_override,
     _eating_contest_override,
     _latte_art_override,
@@ -907,6 +1012,7 @@ OVERRIDES = [
     _memory_card_override,
     _neuro_tracker_override,
     _order_packing_override,
+    _sokoban_override,
     _table_tennis_override,
     _tennis_override,
     _volleyball_override,
@@ -998,6 +1104,11 @@ def parse_args(argv=None):
         action="store_true",
         help="Print all processed entries to stdout without writing any file.",
     )
+    ap.add_argument(
+        "--force",
+        action="store_true",
+        help="Keep build entries that are not found in the review CSV.",
+    )
     return ap.parse_args(argv)
 
 
@@ -1034,6 +1145,7 @@ def main(argv=None):
     n_kept = 0
     n_dropped_true = 0
     n_dropped_missing = 0
+    n_forced_missing = 0
     used_keys = set()   # (rel_path, csv_question) pairs that matched
     missing_keys = []   # (rel_path, build_question) pairs absent from CSV
     # For each missing entry whose path *is* in the CSV: closest CSV
@@ -1060,7 +1172,12 @@ def main(argv=None):
 
         for qi, q in enumerate(matched):
             raw_answer = q.get("answer", "")
-            ans_type, norm = normalize_answer(raw_answer)
+            # manual override for graffiti 0001_pt4
+            if q.get("question", "") == "What is the number being drawn on the wall?":
+                _, norm = normalize_answer(raw_answer)
+                ans_type = "open_text"
+            else:
+                ans_type, norm = normalize_answer(raw_answer)
             # Disambiguate video_id when a clip carries multiple questions.
             video_id = (
                 video_id_base if len(matched) == 1 else f"{video_id_base}_q{qi}"
@@ -1073,25 +1190,29 @@ def main(argv=None):
                 neighbour = closest_csv_question(review, rel_path, raw_question)
                 # If the build's question doesn't exact-match but the closest
                 # CSV neighbour on the same path is already flagged TRUE,
-                # treat as TRUE and skip silently — that question has been
-                # rejected by review, no need to warn or diagnose.
-                if neighbour is not None and neighbour[2] == "TRUE":
+                # treat as TRUE and skip silently unless --force is set.
+                if not args.force and neighbour is not None and neighbour[2] == "TRUE":
                     n_dropped_true += 1
                     continue
                 missing_keys.append((rel_path, _norm_q(raw_question)))
-                n_dropped_missing += 1
+                if args.force:
+                    n_forced_missing += 1
+                else:
+                    n_dropped_missing += 1
                 if neighbour is not None:
                     csv_q_near, dist, csv_flag_near = neighbour
                     fuzzy_log.append(
                         (dist, rel_path, _norm_q(raw_question),
                          csv_q_near, csv_flag_near)
                     )
-                continue
-            used_keys.add((rel_path, csv_q))
-            if flag == "TRUE":
-                n_dropped_true += 1
-                continue
-            # Empty or "FALSE" -> keep.
+                if not args.force:
+                    continue
+            else:
+                used_keys.add((rel_path, csv_q))
+                if flag == "TRUE":
+                    n_dropped_true += 1
+                    continue
+                # Empty or "FALSE" -> keep.
 
             seed_key = f"{task_key}:{video_id}"
             entry = build_entry(
@@ -1110,9 +1231,10 @@ def main(argv=None):
 
     # Warn for build entries not present in the CSV.
     if missing_keys:
+        missing_action = "kept because --force was set" if args.force else "dropped"
         print(
             f"\nWARNING: {len(missing_keys)} build (clip,question) pair(s) "
-            f"not found in review CSV — these were dropped:",
+            f"not found in review CSV — these were {missing_action}:",
             file=sys.stderr,
         )
         for rel, q in missing_keys:
@@ -1170,7 +1292,8 @@ def main(argv=None):
     total = sum(len(v) for v in data.values())
     print(
         f"\nfilter: kept={n_kept}, dropped_TRUE={n_dropped_true}, "
-        f"dropped_missing_from_csv={n_dropped_missing}"
+        f"dropped_missing_from_csv={n_dropped_missing}, "
+        f"forced_missing_from_csv={n_forced_missing}"
     )
     print(f"tasks: {len(data)}, total samples: {total}")
     for k in sorted(data):

@@ -1,25 +1,47 @@
 group: longvid-reasoning-eval_ytb
 task:
-  # - longvid-reasoning-eval_ytb_basketball
+  - longvid-reasoning-eval_ytb_basketball
+  - longvid-reasoning-eval_ytb_book
   - longvid-reasoning-eval_ytb_bouldering
-  # - longvid-reasoning-eval_ytb_boxing
+  - longvid-reasoning-eval_ytb_boxing
   - longvid-reasoning-eval_ytb_carousel
   - longvid-reasoning-eval_ytb_coffee
   - longvid-reasoning-eval_ytb_cooking
-  # - longvid-reasoning-eval_ytb_cube
-  # - longvid-reasoning-eval_ytb_cup_race
-  # - longvid-reasoning-eval_ytb_eating_contest
+  - longvid-reasoning-eval_ytb_cube
+  - longvid-reasoning-eval_ytb_cup_stacking_1st
+  - longvid-reasoning-eval_ytb_cup_stacking_2nd
+  - longvid-reasoning-eval_ytb_cup_stacking_3rd
+  - longvid-reasoning-eval_ytb_cup_stacking_4th
+  - longvid-reasoning-eval_ytb_cup_stacking_5th
+  - longvid-reasoning-eval_ytb_cup_stacking_6th
+  - longvid-reasoning-eval_ytb_cup_stacking_7th
+  - longvid-reasoning-eval_ytb_eating_contest
   - longvid-reasoning-eval_ytb_graffiti
   - longvid-reasoning-eval_ytb_horse_racing
-  # - longvid-reasoning-eval_ytb_latte_art
-  # - longvid-reasoning-eval_ytb_lego
+  - longvid-reasoning-eval_ytb_keyboard
+  - longvid-reasoning-eval_ytb_latte_art
+  - longvid-reasoning-eval_ytb_lego
   # - longvid-reasoning-eval_ytb_marching_band
-  # - longvid-reasoning-eval_ytb_matryoshka
+  - longvid-reasoning-eval_ytb_matryoshka
   - longvid-reasoning-eval_ytb_memory_card
-  # - longvid-reasoning-eval_ytb_neuro_tracker
-  # - longvid-reasoning-eval_ytb_order_packing
-  # - longvid-reasoning-eval_ytb_soccer
+  - longvid-reasoning-eval_ytb_morse
+  - longvid-reasoning-eval_ytb_neuro_tracker
+  - longvid-reasoning-eval_ytb_numberpad
+  - longvid-reasoning-eval_ytb_order_packing
+  - longvid-reasoning-eval_ytb_packing_order_blue
+  - longvid-reasoning-eval_ytb_packing_order_chopsticks
+  - longvid-reasoning-eval_ytb_packing_order_green
+  - longvid-reasoning-eval_ytb_packing_order_yellow
+  - longvid-reasoning-eval_ytb_shell_game
+  # - longvid-reasoning-eval_ytb_showing_card_count_club
+  # - longvid-reasoning-eval_ytb_showing_card_count_diamond
+  # - longvid-reasoning-eval_ytb_showing_card_count_heart
+  # - longvid-reasoning-eval_ytb_showing_card_count_spade
+  # - longvid-reasoning-eval_ytb_showing_card_least
+  # - longvid-reasoning-eval_ytb_showing_card_most
+  - longvid-reasoning-eval_ytb_soccer
   - longvid-reasoning-eval_ytb_sokoban
-  # - longvid-reasoning-eval_ytb_table_tennis
-  # - longvid-reasoning-eval_ytb_tennis
-  # - longvid-reasoning-eval_ytb_volleyball
+  - longvid-reasoning-eval_ytb_table_tennis
+  - longvid-reasoning-eval_ytb_tennis
+  - longvid-reasoning-eval_ytb_tilt_box
+  - longvid-reasoning-eval_ytb_volleyball

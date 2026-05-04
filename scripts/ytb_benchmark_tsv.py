@@ -1,12 +1,14 @@
 """Tab-separated ytb benchmark table with per-task ACC / MCQ / NUM columns.
 
 Layout:
-  Row 1 (header):     | | | AVG | | task1 | | | task2 | | | ...
-  Row 2 (sub-header): | Directory Name | ACC | NUM | ACC | MCQ | NUM | ACC | MCQ | NUM | ...
-  Data rows:          Group | Model | ACC | NUM | ACC | MCQ | NUM | ACC | MCQ | NUM | ...
+  Row 1 (header):     | | | AVG | | | task1 | | | task2 | | | ...
+  Row 2 (sub-header): | Directory Name | ACC | SCORE | NUM | ACC | MCQ | NUM | ACC | MCQ | NUM | ...
+  Data rows:          Group | Model | ACC | SCORE | NUM | ACC | MCQ | NUM | ACC | MCQ | NUM | ...
 
-AVG spans 2 columns (ACC, NUM); each task spans 3 columns (ACC, MCQ, NUM).
-AVG values are means of the corresponding per-task columns over tasks where defined.
+AVG spans 3 columns (ACC, SCORE, NUM); each task spans 3 columns (ACC, MCQ, NUM).
+AVG ACC is computed over individual QA entries from samples_*.jsonl.
+AVG SCORE averages MCQ correctness (1/0) and numeric MRA over individual QA entries.
+AVG NUM is computed over per-entry MRA scores for numeric entries.
 
 Per-task metrics are read directly from the aggregated results.json:
   ACC = `accuracy,none`   (all docs)
@@ -49,6 +51,10 @@ def _resolve_root(arg: Path) -> Path:
     assert out.is_dir(), f"not a directory: {out}"
     print(out)
     return out
+
+
+def _is_run_dir(p: Path) -> bool:
+    return (p / "results.json").is_file()
 
 
 def _run_sort_key(results_json: Path) -> str:
@@ -99,6 +105,59 @@ def _compute_task_metrics(results: dict, task: str) -> tuple[float | None, float
     return (acc, None, num)
 
 
+def _task_from_samples_path(path: Path) -> str | None:
+    prefix = f"samples_{TASK_PREFIX}"
+    if not path.name.startswith(prefix) or path.suffix != ".jsonl":
+        return None
+    return path.stem[len(prefix):]
+
+
+def _is_mcq_sample(sample: dict) -> bool:
+    return "mra" not in sample
+
+
+def _compute_entry_metrics(run_dir: Path, tasks: set[str]) -> tuple[float | None, float | None, float | None]:
+    correct = 0
+    total = 0
+    score_sum = 0.0
+    score_total = 0
+    mra_sum = 0.0
+    mra_total = 0
+    for path in sorted(run_dir.glob(f"samples_{TASK_PREFIX}*.jsonl")):
+        task = _task_from_samples_path(path)
+        if task not in tasks:
+            continue
+        with path.open("r", encoding="utf-8") as fh:
+            for line in fh:
+                line = line.strip()
+                if not line:
+                    continue
+                sample = json.loads(line)
+                acc = sample.get("accuracy")
+                if not isinstance(acc, dict) or "is_correct" not in acc:
+                    continue
+                total += 1
+                is_correct = bool(acc["is_correct"])
+                correct += is_correct
+                if _is_mcq_sample(sample):
+                    score_total += 1
+                    score_sum += float(is_correct)
+
+                mra = sample.get("mra")
+                if isinstance(mra, dict):
+                    mra_score = _as_float(mra.get("mra_score"))
+                    if mra_score is not None:
+                        mra_total += 1
+                        mra_sum += mra_score
+                        score_total += 1
+                        score_sum += mra_score
+
+    avg_acc = correct / total if total else None
+    avg_score = score_sum / score_total if score_total else None
+    avg_num = mra_sum / mra_total if mra_total else None
+    return avg_acc, avg_score, avg_num
+
+
 def _fmt_pct(value: float | None) -> str:
     if value is None:
         return EM
@@ -110,8 +169,13 @@ def _row(cells: list[str]) -> str:
 
 
 def render_tsv(root: Path, group_name: str) -> str:
-    runs = _discover_latest_runs(root)
-    
+    if _is_run_dir(root):
+        # Single run directory: <ytb-root>/<model_key>/<model_name>/<timestamp>
+        mk = root.parent.parent.name if root.parent.parent != root.parent else root.name
+        runs: dict[str, Path] = {mk: root}
+    else:
+        runs = _discover_latest_runs(root)
+
     assert runs, f"no results.json found under {root}"
 
     # Canonical task order: union of tasks observed across all runs.
@@ -120,8 +184,8 @@ def render_tsv(root: Path, group_name: str) -> str:
         all_tasks.update(_tasks_from_results(rd / "results.json"))
     tasks = sorted(all_tasks)
 
-    # h1: list[str] = ["", "", "AVG", ""]
-    # h2: list[str] = ["", "Directory Name", "ACC", "NUM"]
+    # h1: list[str] = ["", "", "AVG", "", ""]
+    # h2: list[str] = ["", "Directory Name", "ACC", "SCORE", "NUM"]
     # for t in tasks:
     #     h1.extend([t, "", ""])
     #     h2.extend(["ACC", "MCQ", "NUM"])
@@ -137,12 +201,9 @@ def render_tsv(root: Path, group_name: str) -> str:
         per_task: list[tuple[float | None, float | None, float | None]] = [
             _compute_task_metrics(results, t) for t in tasks
         ]
-        acc_vals = [a for a, _, _ in per_task if a is not None]
-        num_vals = [n for _, _, n in per_task if n is not None]
-        avg_acc = sum(acc_vals) / len(acc_vals) if acc_vals else None
-        avg_num = sum(num_vals) / len(num_vals) if num_vals else None
+        avg_acc, avg_mcq, avg_num = _compute_entry_metrics(run_dir, set(tasks))
 
-        cells: list[str] = [group_name, mk, _fmt_pct(avg_acc), _fmt_pct(avg_num)]
+        cells: list[str] = [group_name, mk, _fmt_pct(avg_acc), _fmt_pct(avg_mcq), _fmt_pct(avg_num)]
         for acc, mcq, num in per_task:
             cells.extend([_fmt_pct(acc), _fmt_pct(mcq), _fmt_pct(num)])
         lines.append(_row(cells))
