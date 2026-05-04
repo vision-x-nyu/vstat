@@ -34,9 +34,6 @@ ipython_config.py
 *.jsonl
 *.md
 
-*.sh
-!scripts/vista/open_source/*.sh
-
 eval_markdown/
 
 # Caches and temp
