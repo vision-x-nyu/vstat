@@ -7,17 +7,16 @@ BATCH_SIZE=1
 MIV_TOKEN_LEN="${MIV_TOKEN_LEN:-64}"
 SI_TOKEN_LEN="${SI_TOKEN_LEN:-729}"
 
-PYTHON="/nas2/edwin/miniconda/envs/cambrians_eval/bin/python"
+PYTHON="${PYTHON:-python}"
 
 export CUDA_VISIBLE_DEVICES="$GPUS"
 export NCCL_P2P_DISABLE=1
-export HF_HOME="/nas2/edwin/lmms-eval/.cache/huggingface"
-export HF_HUB_OFFLINE=1
+export HF_HOME="${HF_HOME:-$HOME/.cache/huggingface}"
+export HF_HUB_OFFLINE="${HF_HUB_OFFLINE:-0}"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-cd "$SCRIPT_DIR"
-
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+cd "$REPO_ROOT"
 TASKS_INCLUDE="${LMMS_EVAL_TASKS_PATH:-$REPO_ROOT/lmms_eval/tasks}"
 
 OPEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

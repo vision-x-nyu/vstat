@@ -13,13 +13,13 @@ pip install -e ".[all]"
 
 ## Reference Environments
 
-The checked launchers set `PYTHON=` to maintainer-local conda paths. If you create environments elsewhere, update the `PYTHON=` line in the corresponding script.
+The checked launchers default to `PYTHON="${PYTHON:-python}"`, so they use the active environment by default. To run with a specific environment, prefix the command with `PYTHON=/path/to/env/bin/python`.
 
-| Scripts | Maintainer `PYTHON` | Python | `transformers` | Other observed pins |
-|---------|----------------------|--------|----------------|---------------------|
-| `cambrians_*.sh` | `/nas2/edwin/miniconda/envs/cambrians_eval/bin/python` | `3.10.19` | `4.37.0` | `torch==2.5.1`, `accelerate==0.23.0` |
-| `internvl3p5_*.sh` | `/nas2/edwin/miniconda/envs/internvl/bin/python` | `3.10.19` | `4.51.3` | `torch==2.10.0`, `accelerate==0.34.2` |
-| `qwen3vl_*.sh` | `/nas2/edwin/miniconda/envs/lmms_eval/bin/python` | `3.14.2` | `5.0.0` | `torch==2.10.0`, `accelerate==1.12.0`, `qwen-vl-utils==0.0.14` |
+| Scripts | Suggested env | Python | `transformers` | Other observed pins |
+|---------|---------------|--------|----------------|---------------------|
+| `cambrians_*.sh` | `cambrians_eval` | `3.10` | `4.37.0` | `torch==2.5.1`, `accelerate==0.23.0` |
+| `internvl3p5_*.sh` | `internvl` | `3.10` | `4.51.3` | `torch==2.10.0`, `accelerate==0.34.2` |
+| `qwen3vl_*.sh` | `lmms_eval` | `3.14` | `5.0.0` | `torch==2.10.0`, `accelerate==1.12.0`, `qwen-vl-utils==0.0.14` |
 
 Minimal setup pattern for each backend:
 
@@ -47,9 +47,16 @@ python -m pip install -e "third_party/Qwen3-VL/qwen-vl-utils[decord]"
 
 Install the matching CUDA build of `torch`/`torchvision` for your machine before running large model evaluations. The versions above record the tested maintainer environments.
 
-## Dataset path
+## Dataset
 
-Task YAMLs include [`lmms_eval/tasks/longvid-reasoning-eval_vista/_default_template_yaml`](lmms_eval/tasks/longvid-reasoning-eval_vista/_default_template_yaml), which sets `dataset_kwargs.data_files.test` to the merged QA JSON. That path is **machine-specific** in the template; replace it with the path to your copy of the benchmark JSON (or maintain a local override file and point `include_path` / custom YAMLs at it).
+The default task config loads videos directly from the public Hugging Face dataset [`VSTAT-NeurIPS2026/VSTAT`](https://huggingface.co/datasets/VSTAT-NeurIPS2026/VSTAT), using its `train` split as the lmms-eval test split. The task code reads `vstat_qa_clean.json` from the same dataset repository and keeps the QA examples whose videos are present in the HF video split. The default task group omits YouTube-backed subtasks whose videos are not included in the public HF video split.
+
+To use a local/offline QA file or video mirror, set `VSTAT_QA_PATH` and `VSTAT_VIDEO_ROOT`:
+
+```bash
+export VSTAT_QA_PATH=/path/to/vstat_qa_clean.json
+export VSTAT_VIDEO_ROOT=/path/to/VSTAT
+```
 
 Each sub-task YAML in that directory extends the template and sets `task:` names for lmms-eval.
 
@@ -61,7 +68,7 @@ Task group name:
 longvid-reasoning-eval_vista
 ```
 
-Example (after editing dataset paths to valid files on your machine):
+Example:
 
 ```bash
 python -m lmms_eval \
@@ -76,7 +83,7 @@ python -m lmms_eval \
 
 ## Reference launchers (`scripts/vista/open_source/`)
 
-Each `*.sh` script runs **`longvid-reasoning-eval_vista`** with a fixed Hugging Face `MODEL=`, Accelerate, and model-specific `model_args`. They `cd` to `scripts/vista` (parent of `open_source`) before invoking `python -m lmms_eval`. Interpreters and cache paths are set **per script** for the maintainers’ conda environments; edit the `PYTHON=`, `HF_HOME=`, and `HF_HUB_OFFLINE=` lines if your setup differs.
+Each `*.sh` script runs **`longvid-reasoning-eval_vista`** with a fixed Hugging Face `MODEL=`, Accelerate, and model-specific `model_args`. They `cd` to the repository root before invoking `python -m lmms_eval`. Override `PYTHON`, `HF_HOME`, or `HF_HUB_OFFLINE` in your shell if your setup differs.
 
 | Variable | Role |
 |----------|------|
@@ -86,4 +93,3 @@ Each `*.sh` script runs **`longvid-reasoning-eval_vista`** with a fixed Hugging 
 | `GPUS` | Set in each script header; controls `CUDA_VISIBLE_DEVICES`. |
 
 **Batch queue:** [`submit_all_vista.sh`](scripts/vista/open_source/submit_all_vista.sh) enqueues all model scripts over a grid of `MAX_FRAMES` values using **task-spooler** (`ts`). Optional env: `VISTA_OPEN_SOURCE_FRAMES`, `VISTA_MANIFEST`.
-
