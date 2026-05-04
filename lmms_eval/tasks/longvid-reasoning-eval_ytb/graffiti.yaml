@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_ytb_graffiti
-process_docs: !function utils.process_graffiti_docs
-include: _default_template_yaml

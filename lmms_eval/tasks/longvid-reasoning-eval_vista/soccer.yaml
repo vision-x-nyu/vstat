@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_vista_soccer
+process_docs: !function utils.process_soccer_docs
+include: _default_template_yaml

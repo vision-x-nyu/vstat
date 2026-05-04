@@ -1,0 +1,56 @@
+group: longvid-reasoning-eval_vista
+task:
+  - longvid-reasoning-eval_vista_basketball
+  - longvid-reasoning-eval_vista_book
+  - longvid-reasoning-eval_vista_bouldering
+  - longvid-reasoning-eval_vista_boxing
+  - longvid-reasoning-eval_vista_carousel
+  - longvid-reasoning-eval_vista_coffee
+  - longvid-reasoning-eval_vista_cooking
+  - longvid-reasoning-eval_vista_cube
+  - longvid-reasoning-eval_vista_cup_stacking_1st
+  - longvid-reasoning-eval_vista_cup_stacking_2nd
+  - longvid-reasoning-eval_vista_cup_stacking_3rd
+  - longvid-reasoning-eval_vista_cup_stacking_4th
+  - longvid-reasoning-eval_vista_cup_stacking_5th
+  - longvid-reasoning-eval_vista_cup_stacking_6th
+  - longvid-reasoning-eval_vista_cup_stacking_7th
+  - longvid-reasoning-eval_vista_eating_contest
+  - longvid-reasoning-eval_vista_graffiti
+  - longvid-reasoning-eval_vista_horse_racing
+  - longvid-reasoning-eval_vista_keyboard
+  - longvid-reasoning-eval_vista_latte_art
+  - longvid-reasoning-eval_vista_lego
+  # - longvid-reasoning-eval_vista_marching_band
+  - longvid-reasoning-eval_vista_matryoshka
+  - longvid-reasoning-eval_vista_memory_card
+  - longvid-reasoning-eval_vista_morse
+  - longvid-reasoning-eval_vista_neuro_tracker
+  - longvid-reasoning-eval_vista_numberpad
+  - longvid-reasoning-eval_vista_order_packing
+  - longvid-reasoning-eval_vista_packing_order_blue
+  - longvid-reasoning-eval_vista_packing_order_chopsticks
+  - longvid-reasoning-eval_vista_packing_order_green
+  - longvid-reasoning-eval_vista_packing_order_yellow
+  - longvid-reasoning-eval_vista_shell_game
+  # - longvid-reasoning-eval_vista_showing_card_count_club
+  # - longvid-reasoning-eval_vista_showing_card_count_diamond
+  # - longvid-reasoning-eval_vista_showing_card_count_heart
+  # - longvid-reasoning-eval_vista_showing_card_count_spade
+  # - longvid-reasoning-eval_vista_showing_card_least
+  # - longvid-reasoning-eval_vista_showing_card_most
+  - longvid-reasoning-eval_vista_soccer
+  - longvid-reasoning-eval_vista_sokoban
+  - longvid-reasoning-eval_vista_table_tennis
+  - longvid-reasoning-eval_vista_tennis
+  - longvid-reasoning-eval_vista_tilt_box
+  - longvid-reasoning-eval_vista_volleyball
+  - longvid-reasoning-eval_vista_block_counting
+  - longvid-reasoning-eval_vista_dice
+  - longvid-reasoning-eval_vista_funnel_ball
+  - longvid-reasoning-eval_vista_hockey
+  - longvid-reasoning-eval_vista_make_coffee
+  - longvid-reasoning-eval_vista_shell_game_rotate
+  - longvid-reasoning-eval_vista_shuffle_puzzle
+  - longvid-reasoning-eval_vista_tighten_untighten
+  - longvid-reasoning-eval_vista_tilt_v2
