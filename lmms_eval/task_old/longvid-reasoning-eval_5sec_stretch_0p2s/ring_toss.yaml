@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_5sec_stretch_0p2s_ring_toss
-process_docs: !function utils.process_ring_toss_docs
-include: _default_template_yaml

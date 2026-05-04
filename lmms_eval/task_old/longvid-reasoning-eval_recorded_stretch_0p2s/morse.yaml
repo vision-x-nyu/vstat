@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_recorded_stretch_0p2s_morse
-process_docs: !function utils.process_morse_docs
-include: _default_template_yaml

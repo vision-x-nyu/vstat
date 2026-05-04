@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_5sec_stretch_0p2s_tilt_box
-process_docs: !function utils.process_tilt_box_docs
-include: _default_template_yaml

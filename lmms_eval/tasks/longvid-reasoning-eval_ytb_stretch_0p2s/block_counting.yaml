@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_ytb_stretch_0p2s_block_counting
-process_docs: !function utils.process_block_counting_docs
-include: _default_template_yaml

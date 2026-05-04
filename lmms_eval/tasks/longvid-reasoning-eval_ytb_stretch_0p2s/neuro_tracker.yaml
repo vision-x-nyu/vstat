@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_ytb_stretch_0p2s_neuro_tracker
-process_docs: !function utils.process_neuro_tracker_docs
-include: _default_template_yaml

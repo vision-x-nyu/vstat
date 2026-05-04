@@ -35,6 +35,7 @@ ipython_config.py
 *.md
 
 *.sh
+!scripts/ytb/open_source/*.sh
 
 eval_markdown/
 
