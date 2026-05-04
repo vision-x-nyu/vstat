@@ -1,0 +1,9 @@
+[submodule "third_party/cambrian-s"]
+	path = third_party/cambrian-s
+	url = https://github.com/cambrian-mllm/cambrian-s.git
+[submodule "third_party/Qwen3-VL"]
+	path = third_party/Qwen3-VL
+	url = https://github.com/QwenLM/Qwen3-VL.git
+[submodule "third_party/InternVL"]
+	path = third_party/InternVL
+	url = https://github.com/OpenGVLab/InternVL.git
