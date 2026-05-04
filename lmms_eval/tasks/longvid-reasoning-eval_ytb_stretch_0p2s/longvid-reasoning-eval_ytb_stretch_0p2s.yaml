@@ -1,26 +1,56 @@
 group: longvid-reasoning-eval_ytb_stretch_0p2s
 task:
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_basketball
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_bouldering
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_boxing
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_carousel
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_coffee
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_cooking
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_cube
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_cup_race
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_eating_contest
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_graffiti
+  - longvid-reasoning-eval_ytb_stretch_0p2s_basketball
+  - longvid-reasoning-eval_ytb_stretch_0p2s_book
+  - longvid-reasoning-eval_ytb_stretch_0p2s_bouldering
+  - longvid-reasoning-eval_ytb_stretch_0p2s_boxing
+  - longvid-reasoning-eval_ytb_stretch_0p2s_carousel
+  - longvid-reasoning-eval_ytb_stretch_0p2s_coffee
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cooking
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cube
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cup_stacking_1st
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cup_stacking_2nd
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cup_stacking_3rd
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cup_stacking_4th
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cup_stacking_5th
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cup_stacking_6th
+  - longvid-reasoning-eval_ytb_stretch_0p2s_cup_stacking_7th
+  - longvid-reasoning-eval_ytb_stretch_0p2s_eating_contest
+  - longvid-reasoning-eval_ytb_stretch_0p2s_graffiti
   - longvid-reasoning-eval_ytb_stretch_0p2s_horse_racing
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_jump_rope
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_latte_art
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_lego
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_marching_band
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_matryoshka
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_n_back
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_order_packing
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_soccer
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_strand_count
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_street_food
+  - longvid-reasoning-eval_ytb_stretch_0p2s_keyboard
+  - longvid-reasoning-eval_ytb_stretch_0p2s_latte_art
+  - longvid-reasoning-eval_ytb_stretch_0p2s_lego
+  # - longvid-reasoning-eval_ytb_marching_band
+  - longvid-reasoning-eval_ytb_stretch_0p2s_matryoshka
+  - longvid-reasoning-eval_ytb_stretch_0p2s_memory_card
+  - longvid-reasoning-eval_ytb_stretch_0p2s_morse
+  - longvid-reasoning-eval_ytb_stretch_0p2s_neuro_tracker
+  - longvid-reasoning-eval_ytb_stretch_0p2s_numberpad
+  - longvid-reasoning-eval_ytb_stretch_0p2s_order_packing
+  - longvid-reasoning-eval_ytb_stretch_0p2s_packing_order_blue
+  - longvid-reasoning-eval_ytb_stretch_0p2s_packing_order_chopsticks
+  - longvid-reasoning-eval_ytb_stretch_0p2s_packing_order_green
+  - longvid-reasoning-eval_ytb_stretch_0p2s_packing_order_yellow
+  - longvid-reasoning-eval_ytb_stretch_0p2s_shell_game
+  # - longvid-reasoning-eval_ytb_stretch_0p2s_showing_card_count_club
+  # - longvid-reasoning-eval_ytb_stretch_0p2s_showing_card_count_diamond
+  # - longvid-reasoning-eval_ytb_stretch_0p2s_showing_card_count_heart
+  # - longvid-reasoning-eval_ytb_stretch_0p2s_showing_card_count_spade
+  # - longvid-reasoning-eval_ytb_stretch_0p2s_showing_card_least
+  # - longvid-reasoning-eval_ytb_stretch_0p2s_showing_card_most
+  - longvid-reasoning-eval_ytb_stretch_0p2s_soccer
+  - longvid-reasoning-eval_ytb_stretch_0p2s_sokoban
   - longvid-reasoning-eval_ytb_stretch_0p2s_table_tennis
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_tennis
-  # - longvid-reasoning-eval_ytb_stretch_0p2s_wii
+  - longvid-reasoning-eval_ytb_stretch_0p2s_tennis
+  - longvid-reasoning-eval_ytb_stretch_0p2s_tilt_box
+  - longvid-reasoning-eval_ytb_stretch_0p2s_volleyball
+  - longvid-reasoning-eval_ytb_stretch_0p2s_block_counting
+  - longvid-reasoning-eval_ytb_stretch_0p2s_dice
+  - longvid-reasoning-eval_ytb_stretch_0p2s_funnel_ball
+  - longvid-reasoning-eval_ytb_stretch_0p2s_hockey
+  - longvid-reasoning-eval_ytb_stretch_0p2s_make_coffee
+  - longvid-reasoning-eval_ytb_stretch_0p2s_shell_game_rotate
+  - longvid-reasoning-eval_ytb_stretch_0p2s_shuffle_puzzle
+  - longvid-reasoning-eval_ytb_stretch_0p2s_tighten_untighten
+  - longvid-reasoning-eval_ytb_stretch_0p2s_tilt_v2

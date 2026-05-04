@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_showing_card_count_diamond
+process_docs: !function utils.process_showing_card_count_diamond_docs
+include: _default_template_yaml
