@@ -250,9 +250,15 @@ def _serialize_response(response: Any) -> str:
 def _deserialize_response(stored: str) -> Any:
     """json.loads returns list for stored tuples — downstream tuple unpacking still works."""
     try:
-        return json.loads(stored)
+        response = json.loads(stored)
     except (json.JSONDecodeError, TypeError):
         return stored
+    if isinstance(response, dict) and response.get("__generation_result__"):
+        return GenerationResult(
+            text=str(response.get("text", "")),
+            reasoning=response.get("reasoning"),
+        )
+    return response
 
 
 class ResponseCache:
@@ -435,10 +441,16 @@ class ResponseCache:
     def _extract_cacheable(response: Any) -> Any:
         """Extract the cache-safe payload from a model response.
 
-        ``GenerationResult`` objects are reduced to their ``.text`` so that the
-        cache stores only plain strings (token counts are ephemeral).
+        ``GenerationResult`` token counts are ephemeral, but reasoning summaries
+        should survive cache hits so logged samples stay complete.
         """
         if isinstance(response, GenerationResult):
+            if response.reasoning is not None:
+                return {
+                    "__generation_result__": True,
+                    "text": response.text,
+                    "reasoning": response.reasoning,
+                }
             return response.text
         return response
 
