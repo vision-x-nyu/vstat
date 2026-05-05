@@ -2,7 +2,7 @@ import base64
 import os
 import time
 from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, wait
-from typing import List, Optional, Tuple, Union
+from typing import Any, List, Optional, Tuple, Union
 from urllib.parse import unquote
 
 import numpy as np
@@ -63,6 +63,46 @@ def _normalize_openai_message_content(content) -> str:
     return str(content)
 
 
+def _uses_reasoning_chat_params(model_version: str) -> bool:
+    model_id = model_version.lower()
+    return model_id.startswith(("o1", "o3", "o4", "gpt-5"))
+
+
+def _get_value(obj: Any, key: str, default: Any = None) -> Any:
+    if isinstance(obj, dict):
+        return obj.get(key, default)
+    return getattr(obj, key, default)
+
+
+def _extract_responses_output_text(response: Any) -> str:
+    output_text = _get_value(response, "output_text")
+    if isinstance(output_text, str):
+        return output_text
+
+    text_parts = []
+    for item in _get_value(response, "output", []) or []:
+        if _get_value(item, "type") != "message":
+            continue
+        for part in _get_value(item, "content", []) or []:
+            if _get_value(part, "type") in {"output_text", "text"}:
+                text = _get_value(part, "text")
+                if isinstance(text, str):
+                    text_parts.append(text)
+    return "".join(text_parts)
+
+
+def _extract_responses_reasoning_summary(response: Any) -> Optional[str]:
+    summary_parts = []
+    for item in _get_value(response, "output", []) or []:
+        if _get_value(item, "type") != "reasoning":
+            continue
+        for part in _get_value(item, "summary", []) or []:
+            text = _get_value(part, "text")
+            if isinstance(text, str) and text.strip():
+                summary_parts.append(text.strip())
+    return "\n".join(summary_parts) if summary_parts else None
+
+
 @register_model("openai")
 class OpenAICompatible(lmms):
     def __init__(
@@ -91,6 +131,9 @@ class OpenAICompatible(lmms):
         adaptive_failure_threshold: float = 0.05,
         prefix_aware_queue: bool = True,
         prefix_hash_chars: int = 256,
+        reasoning_effort: Optional[str] = None,
+        reasoning_summary: Optional[str] = None,
+        use_responses_api: bool = False,
         **kwargs,
     ) -> None:
         """
@@ -117,6 +160,9 @@ class OpenAICompatible(lmms):
         self.video_as_url = parse_bool(video_as_url)
         self.num_concurrent = max(1, int(num_concurrent))
         self.adaptive_concurrency = parse_bool(adaptive_concurrency)
+        self.reasoning_effort = reasoning_effort
+        self.reasoning_summary = None if reasoning_summary in (None, "", "none", "None") else str(reasoning_summary)
+        self.use_responses_api = parse_bool(use_responses_api)
         self.adaptive_config = AdaptiveConcurrencyConfig.from_raw(
             min_concurrency=adaptive_min_concurrency,
             max_concurrency=adaptive_max_concurrency,
@@ -353,6 +399,41 @@ class OpenAICompatible(lmms):
             self.adaptive_config.max_concurrency if self.adaptive_concurrency else current_concurrency,
         )
 
+        def _to_responses_payload(payload: dict) -> dict:
+            content = []
+            for part in payload["messages"][0]["content"]:
+                part_type = part.get("type")
+                if part_type == "text":
+                    content.append({"type": "input_text", "text": part["text"]})
+                elif part_type == "image_url":
+                    content.append({"type": "input_image", "image_url": part["image_url"]["url"]})
+                elif part_type == "input_audio":
+                    content.append(part)
+                else:
+                    raise ValueError(f"Responses API conversion does not support content part type: {part_type}")
+
+            responses_payload = {
+                "model": payload["model"],
+                "input": [{"role": "user", "content": content}],
+            }
+
+            max_output_tokens = payload.get("max_completion_tokens", payload.get("max_tokens"))
+            if max_output_tokens is not None:
+                responses_payload["max_output_tokens"] = max_output_tokens
+
+            if "temperature" in payload:
+                responses_payload["temperature"] = payload["temperature"]
+
+            reasoning = {}
+            if self.reasoning_effort:
+                reasoning["effort"] = self.reasoning_effort
+            if self.reasoning_summary:
+                reasoning["summary"] = self.reasoning_summary
+            if reasoning:
+                responses_payload["reasoning"] = reasoning
+
+            return responses_payload
+
         def process_single_request(local_index: int, payload: dict):
             started_at = time.time()
             rate_limited = False
@@ -360,25 +441,41 @@ class OpenAICompatible(lmms):
 
             for attempt in range(self.max_retries):
                 try:
-                    response = self.client.chat.completions.create(**payload)
-                    response_text = _normalize_openai_message_content(response.choices[0].message.content)
+                    if self.use_responses_api:
+                        response = self.client.responses.create(**_to_responses_payload(payload))
+                        response_text = _extract_responses_output_text(response)
+                        reasoning = _extract_responses_reasoning_summary(response)
+                    else:
+                        response = self.client.chat.completions.create(**payload)
+                        response_text = _normalize_openai_message_content(response.choices[0].message.content)
+                        reasoning = None
                     token_counts = None
                     if hasattr(response, "usage") and response.usage:
+                        input_tokens = getattr(response.usage, "prompt_tokens", None)
+                        if input_tokens is None:
+                            input_tokens = getattr(response.usage, "input_tokens", 0) or 0
+                        output_tokens = getattr(response.usage, "completion_tokens", None)
+                        if output_tokens is None:
+                            output_tokens = getattr(response.usage, "output_tokens", 0) or 0
+                        output_details = getattr(response.usage, "completion_tokens_details", None)
+                        if output_details is None:
+                            output_details = getattr(response.usage, "output_tokens_details", None)
+                        reasoning_tokens = (getattr(output_details, "reasoning_tokens", 0) or 0) if output_details else 0
                         log_usage(
                             model_name=self.model_version,
                             task_name=None,
-                            input_tokens=getattr(response.usage, "prompt_tokens", 0) or 0,
-                            output_tokens=getattr(response.usage, "completion_tokens", 0) or 0,
-                            reasoning_tokens=(getattr(response.usage.completion_tokens_details, "reasoning_tokens", 0) or 0) if hasattr(response.usage, "completion_tokens_details") and response.usage.completion_tokens_details else 0,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            reasoning_tokens=reasoning_tokens,
                             source="model",
                         )
                         token_counts = TokenCounts(
-                            input_tokens=getattr(response.usage, "prompt_tokens", 0) or 0,
-                            output_tokens=getattr(response.usage, "completion_tokens", 0) or 0,
-                            reasoning_tokens=(getattr(response.usage.completion_tokens_details, "reasoning_tokens", 0) or 0) if hasattr(response.usage, "completion_tokens_details") and response.usage.completion_tokens_details else 0,
+                            input_tokens=input_tokens,
+                            output_tokens=output_tokens,
+                            reasoning_tokens=reasoning_tokens,
                         )
                     latency = time.time() - started_at
-                    return response_text, local_index, True, rate_limited, latency, token_counts
+                    return response_text, local_index, True, rate_limited, latency, token_counts, reasoning
                 except Exception as exc:
                     error_msg = str(exc)
                     last_error_msg = error_msg
@@ -392,7 +489,7 @@ class OpenAICompatible(lmms):
             latency = time.time() - started_at
             error_preview = last_error_msg.replace("\n", " ")[:200]
             failure_content = f"[LMMS_EVAL_REQUEST_FAILED after {self.max_retries} retries] {error_preview}"
-            return failure_content, local_index, False, rate_limited, latency, None
+            return failure_content, local_index, False, rate_limited, latency, None, None
 
         def maybe_update_concurrency(force: bool = False) -> None:
             nonlocal current_concurrency
@@ -497,12 +594,14 @@ class OpenAICompatible(lmms):
                         }
                     )
 
-            if "o1" in self.model_version or "o3" in self.model_version:
+            if _uses_reasoning_chat_params(self.model_version):
                 payload.pop("temperature")
-                payload["reasoning_effort"] = "medium"
-                payload["response_format"] = {"type": "text"}
                 payload.pop("max_tokens")
                 payload["max_completion_tokens"] = max_new_tokens
+                if self.reasoning_effort:
+                    payload["reasoning_effort"] = self.reasoning_effort
+                if self.model_version.lower().startswith(("o1", "o3")):
+                    payload["response_format"] = {"type": "text"}
 
             return payload
 
@@ -532,9 +631,10 @@ class OpenAICompatible(lmms):
                         rate_limited,
                         latency,
                         token_counts,
+                        reasoning,
                     ) = future.result()
                     in_flight.pop(future, None)
-                    reordered_responses[local_index] = GenerationResult(text=response_text, token_counts=token_counts)
+                    reordered_responses[local_index] = GenerationResult(text=response_text, token_counts=token_counts, reasoning=reasoning)
                     if not success:
                         failed_requests += 1
                     if rate_limited:

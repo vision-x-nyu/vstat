@@ -48,6 +48,11 @@ class Qwen3_VL(lmms):
         system_prompt: Optional[str] = "You are a helpful assistant.",
         interleave_visuals: Optional[bool] = False,
         reasoning_prompt: Optional[str] = None,
+        do_sample: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        top_p: Optional[float] = None,
+        top_k: Optional[int] = None,
+        max_new_tokens: Optional[int] = None,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -100,6 +105,21 @@ class Qwen3_VL(lmms):
         self._max_length = kwargs.get("max_length", 2048)
         self.batch_size_per_gpu = int(batch_size)
         self.use_cache = use_cache
+
+        # Constructor-level generation overrides that win over per-task gen_kwargs.
+        # Useful for forcing a per-model recipe (sampling temps, max_new_tokens) without
+        # editing task YAML.
+        self._gen_overrides: dict = {}
+        if do_sample is not None:
+            self._gen_overrides["do_sample"] = bool(do_sample)
+        if temperature is not None:
+            self._gen_overrides["temperature"] = float(temperature)
+        if top_p is not None:
+            self._gen_overrides["top_p"] = float(top_p)
+        if top_k is not None:
+            self._gen_overrides["top_k"] = int(top_k)
+        if max_new_tokens is not None:
+            self._gen_overrides["max_new_tokens"] = int(max_new_tokens)
 
         if accelerator.num_processes > 1:
             assert accelerator.distributed_type in [
@@ -356,6 +376,7 @@ class Qwen3_VL(lmms):
                 "max_new_tokens": 128,
                 "temperature": 0.0,  # Set to 0 for greedy default
                 "top_p": None,
+                "top_k": None,
                 "num_beams": 1,
             }
             # Update with provided kwargs
@@ -368,6 +389,12 @@ class Qwen3_VL(lmms):
                 current_gen_kwargs["do_sample"] = False
                 current_gen_kwargs["temperature"] = None
                 current_gen_kwargs["top_p"] = None
+                current_gen_kwargs["top_k"] = None
+
+            # Constructor-level overrides win over task gen_kwargs (e.g., Thinking
+            # mode forces sampling regardless of task YAML's greedy defaults).
+            if self._gen_overrides:
+                current_gen_kwargs.update(self._gen_overrides)
 
             cont = self.model.generate(
                 **inputs,
@@ -376,6 +403,7 @@ class Qwen3_VL(lmms):
                 do_sample=current_gen_kwargs["do_sample"],
                 temperature=current_gen_kwargs["temperature"],
                 top_p=current_gen_kwargs["top_p"],
+                top_k=current_gen_kwargs["top_k"],
                 num_beams=current_gen_kwargs["num_beams"],
                 max_new_tokens=current_gen_kwargs["max_new_tokens"],
                 use_cache=self.use_cache,
