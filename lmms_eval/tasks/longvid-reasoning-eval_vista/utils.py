@@ -14,6 +14,8 @@ from pathlib import Path
 
 from datasets import Dataset
 
+import numpy as np
+
 # Video root resolution order:
 #   1. $VSTAT_VIDEO_ROOT (absolute directory) — used as the prefix for relative paths.
 #   2. <repo_root>/data/ — fallback. Videos referenced as e.g.
@@ -248,6 +250,10 @@ def _is_correct(doc, parsed_prediction):
     return parsed_prediction == str(doc["answer_text"]).strip().lower()
 
 
+def _abs_dist_norm(pred, target):
+    return abs(pred - target) / abs(target)
+
+
 def _compute_mra(doc, parsed_prediction):
     if doc["is_mcq"] or doc.get("target_value") is None:
         return None
@@ -256,7 +262,15 @@ def _compute_mra(doc, parsed_prediction):
         return 0.0
     if gt == 0:
         return 1.0 if parsed_prediction == 0 else 0.0
-    return max(0.0, 1.0 - abs(parsed_prediction - gt) / abs(gt))
+    
+    # fixed confidence intervals
+    start = 0.5
+    end = 0.95
+    interval = 0.05
+    num_pts = (end - start) / interval + 2
+    conf_intervs = np.linspace(start, end, int(num_pts))
+    accuracy = _abs_dist_norm(parsed_prediction, gt) <= 1 - conf_intervs
+    return accuracy.mean()
 
 
 def _compute_mae(doc, parsed_prediction):
