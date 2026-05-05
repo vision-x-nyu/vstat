@@ -28,6 +28,20 @@ DEFAULT_GEN_KWARGS = dict(
     do_sample=False,
 )
 
+# Per the InternVL3.5 model card, enabling Thinking mode requires setting the
+# system prompt to this string and sampling with temperature=0.6 to mitigate
+# repetition. Source: https://huggingface.co/OpenGVLab/InternVL3_5-8B
+R1_SYSTEM_PROMPT = (
+    "You are an AI assistant that rigorously follows this response protocol:\n\n"
+    "1. First, conduct a detailed analysis of the question. Consider different angles, "
+    "potential solutions, and reason through the problem step-by-step. Enclose this entire "
+    "thinking process within <think> and </think> tags.\n\n"
+    "2. After the thinking section, provide a clear, concise, and direct answer to the user's "
+    "question. Separate the answer from the think section with a newline.\n\n"
+    "Ensure that the thinking process is thorough but remains focused on the query. "
+    "The final answer should be standalone and not reference the thinking section."
+)
+
 
 def build_transform(input_size: int) -> T.Compose:
     """Build image transformation pipeline for preprocessing.
@@ -261,6 +275,11 @@ class InternVL3(lmms):
         max_num: int = 12,
         total_max_num: int = 64,
         use_flash_attn: bool = True,
+        thinking: bool = False,
+        system_prompt: Optional[str] = None,
+        do_sample: Optional[bool] = None,
+        temperature: Optional[float] = None,
+        max_new_tokens: Optional[int] = None,
         **kwargs,
     ):
         super().__init__()
@@ -269,6 +288,20 @@ class InternVL3(lmms):
         self.num_frame = num_frame
         self.max_num = max_num
         self.total_max_num = total_max_num
+
+        self.default_gen_kwargs = dict(DEFAULT_GEN_KWARGS)
+        if thinking:
+            # Recommended config from the InternVL3.5 model card for Thinking mode.
+            self.default_gen_kwargs.update(do_sample=True, temperature=0.6, max_new_tokens=4096)
+            if system_prompt is None:
+                system_prompt = R1_SYSTEM_PROMPT
+        if do_sample is not None:
+            self.default_gen_kwargs["do_sample"] = bool(do_sample)
+        if temperature is not None:
+            self.default_gen_kwargs["temperature"] = float(temperature)
+        if max_new_tokens is not None:
+            self.default_gen_kwargs["max_new_tokens"] = int(max_new_tokens)
+        self._system_prompt = system_prompt
 
         batch_size_int = int(batch_size)
         assert batch_size_int == 1, f"Batch size should be 1 for InternVL3, but got {batch_size_int}."
@@ -300,6 +333,9 @@ class InternVL3(lmms):
         ).eval()
         self._config = self._model.config
         self._tokenizer = AutoTokenizer.from_pretrained(self.path, trust_remote_code=True, use_fast=False)
+
+        if self._system_prompt is not None:
+            self._model.system_message = self._system_prompt
 
         if accelerator.num_processes > 1:
             assert accelerator.distributed_type in [
@@ -397,13 +433,13 @@ class InternVL3(lmms):
         for contexts, gen_kwargs, doc_to_visual, doc_id, task, split in [reg.args for reg in requests]:
             if "until" in gen_kwargs:
                 gen_kwargs.pop("until")
-            for k, v in DEFAULT_GEN_KWARGS.items():
+            for k, v in self.default_gen_kwargs.items():
                 if k not in gen_kwargs:
                     gen_kwargs[k] = v
 
             pop_keys = []
             for k, v in gen_kwargs.items():
-                if k not in DEFAULT_GEN_KWARGS:
+                if k not in self.default_gen_kwargs:
                     pop_keys.append(k)
 
             for k in pop_keys:
