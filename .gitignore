@@ -35,7 +35,7 @@ ipython_config.py
 *.md
 
 eval_markdown/
-
+vstat_hf_cache/
 # Caches and temp
 **/.cache
 lm_cache

@@ -8,26 +8,79 @@ within the same sub-task when the ground-truth answer is tied across multiple
 suits. The is_mcq flag is therefore determined per-doc.
 """
 
+import json
 import os
 import re
 from pathlib import Path
 
-from datasets import Dataset
+from datasets import Dataset, DatasetDict
+from lmms_eval.api.task import ConfigurableTask
 
 import numpy as np
 
 # Video root resolution order:
 #   1. $VSTAT_VIDEO_ROOT (absolute directory) — used as the prefix for relative paths.
-#   2. <repo_root>/data/ — fallback. Videos referenced as e.g.
+#   2. <repo_root>/data/vstat/ — fallback. Videos referenced as e.g.
 #      "videos/youtube/basketball/0001_pt1.mp4" resolve to
 #      "<root>/videos/youtube/basketball/0001_pt1.mp4".
 _REPO_ROOT = Path(__file__).resolve().parents[3]
-_DATA_ROOT = _REPO_ROOT / "data"
+_DATA_ROOT = _REPO_ROOT / "data" / "vstat"
 
 
 def _video_root() -> Path:
     override = os.environ.get("VSTAT_VIDEO_ROOT")
     return Path(override) if override else _DATA_ROOT
+
+
+def _resolve_repo_path(path):
+    path = Path(path).expanduser()
+    return path if path.is_absolute() else _REPO_ROOT / path
+
+
+def _qa_path_from_kwargs(dataset_kwargs) -> Path:
+    override = os.environ.get("VSTAT_QA_PATH")
+    if override:
+        return _resolve_repo_path(override)
+    data_files = (dataset_kwargs or {}).get("data_files", {})
+    if isinstance(data_files, dict):
+        path = data_files.get("test") or next(iter(data_files.values()))
+    else:
+        path = data_files
+    if not path:
+        path = "data/vstat/vstat_qa_clean.json"
+    return _resolve_repo_path(path)
+
+
+def _normalize_doc_for_arrow(doc):
+    doc = dict(doc)
+    doc["answer"] = str(doc["answer"])
+    doc["choices"] = doc.get("choices") or []
+    return doc
+
+
+class VSTATTask(ConfigurableTask):
+    """ConfigurableTask variant that reads the official VSTAT QA JSON."""
+
+    def __init__(self, *args, config=None, **kwargs):
+        if config is not None:
+            config = dict(config)
+            config.pop("class", None)
+        super().__init__(*args, config=config, **kwargs)
+
+    def download(self, dataset_kwargs=None) -> None:
+        qa_path = _qa_path_from_kwargs(dataset_kwargs)
+        with qa_path.open("r", encoding="utf-8") as f:
+            payload = json.load(f)
+        data = payload["data"] if isinstance(payload, dict) and "data" in payload else payload
+        rows = [
+            {"data": [_normalize_doc_for_arrow(doc) for doc in docs]}
+            for _, docs in data.items()
+        ]
+        split = self.config.test_split
+        self.dataset = DatasetDict({split: Dataset.from_list(rows)})
+        if self.config.process_docs is not None:
+            self.dataset[split] = self.config.process_docs(self.dataset[split])
+        self.dataset_no_image = self.dataset.copy()
 
 INTEGER_PATTERN = re.compile(r"-?\d+")
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
@@ -85,8 +138,8 @@ def _build_task_dataset(dataset, source_task):
         answer = doc["answer"]
         assert question is not None, f"Missing question for {source_task}"
         assert answer is not None, f"Missing answer for {source_task}"
-        choices = doc.get("choices")
-        is_mcq = choices is not None
+        choices = doc.get("choices") or []
+        is_mcq = bool(choices)
         flat_doc = {
             "source_task": source_task,
             "video_id":    str(doc["video_id"]),

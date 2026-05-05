@@ -2,7 +2,7 @@ MODEL="Qwen/Qwen3-VL-8B-Thinking"
 TASK_NAME="longvid-reasoning-eval_vista"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
-BATCH_SIZE=1
+BATCH_SIZE=2
 MIN_PIXELS=784
 MAX_PIXELS=50176
 
@@ -24,7 +24,7 @@ OPEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p "$OUTPUT_DIR"
 
-MODEL_ARGS="pretrained=${MODEL},min_pixels=${MIN_PIXELS},max_pixels=${MAX_PIXELS},max_num_frames=${MAX_FRAMES}"
+MODEL_ARGS="pretrained=${MODEL},min_pixels=${MIN_PIXELS},max_pixels=${MAX_PIXELS},max_num_frames=${MAX_FRAMES},attn_implementation=flash_attention_2,max_new_tokens=1024"
 
 export LMMS_EVAL_LAUNCHER="accelerate"
 

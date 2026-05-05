@@ -1,7 +1,8 @@
 dataset_path: json
+class: !function utils.VSTATTask
 dataset_kwargs:
   data_files:
-    test: vstat_qa_clean.json
+    test: data/vstat/vstat_qa_clean.json
 task: longvid-reasoning-eval_vista
 test_split: test
 output_type: generate_until

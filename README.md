@@ -49,16 +49,27 @@ Install the matching CUDA build of `torch`/`torchvision` for your machine before
 
 ## Dataset
 
-The default task config loads videos directly from the public Hugging Face dataset [`VSTAT-NeurIPS2026/VSTAT`](https://huggingface.co/datasets/VSTAT-NeurIPS2026/VSTAT), using its `train` split as the lmms-eval test split. The task code reads `vstat_qa_clean.json` from the same dataset repository and keeps the QA examples whose videos are present in the HF video split. The default task group omits YouTube-backed subtasks whose videos are not included in the public HF video split.
-
-To use a local/offline QA file or video mirror, make sure to set `VSTAT_QA_PATH` and `VSTAT_VIDEO_ROOT`:
+The task expects a local VSTAT folder at `data/vstat/`. Download the Hugging Face dataset [`VSTAT-NeurIPS2026/VSTAT`](https://huggingface.co/datasets/VSTAT-NeurIPS2026/VSTAT) there from the repository root:
 
 ```bash
-export VSTAT_QA_PATH=/path/to/vstat_qa_clean.json
-export VSTAT_VIDEO_ROOT=/path/to/VSTAT
+mkdir -p data
+huggingface-cli download VSTAT-NeurIPS2026/VSTAT \
+  --repo-type=dataset \
+  --local-dir data/vstat
 ```
 
-Each sub-task YAML in that directory extends the template and sets `task:` names for lmms-eval.
+Then run the HF-provided YouTube download and redaction scripts unchanged from inside that folder:
+
+```bash
+cd data/vstat
+python scripts/download_youtube.py --resolution-map youtube_resolutions.json
+bash scripts/redact.sh
+cd ../..
+```
+
+For a quick smoke test before the full YouTube run, add `--limit 1` to the downloader command.
+
+The task config reads `data/vstat/vstat_qa_clean.json`; video paths in that QA file are resolved relative to `data/vstat/`. If you keep VSTAT somewhere else, set `VSTAT_QA_PATH=/path/to/vstat_qa_clean.json` and `VSTAT_VIDEO_ROOT=/path/to/vstat`.
 
 ## Run VISTA
 

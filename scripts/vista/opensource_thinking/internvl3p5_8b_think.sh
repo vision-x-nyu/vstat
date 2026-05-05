@@ -1,9 +1,10 @@
-MODEL="lmms-lab/llava-onevision-qwen2-7b-ov"
+MODEL="OpenGVLab/InternVL3_5-8B"
+# InternVL3.5-8B with Thinking mode enabled (R1_SYSTEM_PROMPT, sampling at T=0.6).
+# Reference: https://huggingface.co/OpenGVLab/InternVL3_5-8B
 TASK_NAME="longvid-reasoning-eval_vista"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
 BATCH_SIZE=1
-
 PYTHON="${PYTHON:-python}"
 
 export CUDA_VISIBLE_DEVICES="$GPUS"
@@ -22,13 +23,13 @@ OPEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p "$OUTPUT_DIR"
 
-MODEL_ARGS="pretrained=${MODEL},conv_template=qwen_1_5,max_frames_num=${MAX_FRAMES}"
+MODEL_ARGS="pretrained=${MODEL},modality=video,num_frame=${MAX_FRAMES},thinking=True"
 
 export LMMS_EVAL_LAUNCHER="accelerate"
 
 $PYTHON -m accelerate.commands.launch --num_processes=${NUM_PROCESSES} --main_process_port=${MAIN_PROCESS_PORT:-29517} -m lmms_eval \
     --include_path "${TASKS_INCLUDE}" \
-    --model llava_onevision \
+    --model internvl3_5 \
     --model_args "${MODEL_ARGS}" \
     --tasks ${TASK_NAME} \
     --batch_size ${BATCH_SIZE} \
