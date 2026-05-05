@@ -51,7 +51,7 @@ Install the matching CUDA build of `torch`/`torchvision` for your machine before
 
 The default task config loads videos directly from the public Hugging Face dataset [`VSTAT-NeurIPS2026/VSTAT`](https://huggingface.co/datasets/VSTAT-NeurIPS2026/VSTAT), using its `train` split as the lmms-eval test split. The task code reads `vstat_qa_clean.json` from the same dataset repository and keeps the QA examples whose videos are present in the HF video split. The default task group omits YouTube-backed subtasks whose videos are not included in the public HF video split.
 
-To use a local/offline QA file or video mirror, set `VSTAT_QA_PATH` and `VSTAT_VIDEO_ROOT`:
+To use a local/offline QA file or video mirror, make sure to set `VSTAT_QA_PATH` and `VSTAT_VIDEO_ROOT`:
 
 ```bash
 export VSTAT_QA_PATH=/path/to/vstat_qa_clean.json
@@ -61,6 +61,8 @@ export VSTAT_VIDEO_ROOT=/path/to/VSTAT
 Each sub-task YAML in that directory extends the template and sets `task:` names for lmms-eval.
 
 ## Run VISTA
+
+It's recommended to download the dataset into a local `data/` folder.
 
 Task group name:
 

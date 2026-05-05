@@ -10,8 +10,22 @@ suits. The is_mcq flag is therefore determined per-doc.
 
 import os
 import re
+from pathlib import Path
 
 from datasets import Dataset
+
+# Video root resolution order:
+#   1. $VSTAT_VIDEO_ROOT (absolute directory) — used as the prefix for relative paths.
+#   2. <repo_root>/data/ — fallback. Videos referenced as e.g.
+#      "videos/youtube/basketball/0001_pt1.mp4" resolve to
+#      "<root>/videos/youtube/basketball/0001_pt1.mp4".
+_REPO_ROOT = Path(__file__).resolve().parents[3]
+_DATA_ROOT = _REPO_ROOT / "data"
+
+
+def _video_root() -> Path:
+    override = os.environ.get("VSTAT_VIDEO_ROOT")
+    return Path(override) if override else _DATA_ROOT
 
 INTEGER_PATTERN = re.compile(r"-?\d+")
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
@@ -167,14 +181,10 @@ process_tighten_untighten_docs            = _make_processor("tighten_untighten")
 process_tilt_v2_docs                      = _make_processor("tilt_v2")
 
 
-_LEGACY_VIDEO_ROOT = "/nas2/benchmarks/vpi/vista-vids/processed/"
-_CURRENT_VIDEO_ROOT = "/nas2/benchmarks/vpi/real/processed/"
-
-
 def doc_to_visual(doc):
     video_path = doc["video_path"]
-    if video_path.startswith(_LEGACY_VIDEO_ROOT):
-        video_path = _CURRENT_VIDEO_ROOT + video_path[len(_LEGACY_VIDEO_ROOT):]
+    if not os.path.isabs(video_path):
+        video_path = str(_video_root() / video_path)
     assert os.path.exists(video_path), f"Missing video file: {video_path}"
     return [video_path]
 
