@@ -12,10 +12,13 @@ doc_to_target: !function utils.doc_to_target
 process_docs: !function utils.process_docs
 process_results: !function utils.process_results
 metric_list:
-  - metric: accuracy
-    aggregation: !function utils.aggregate_accuracy
+  - metric: Numeric_MRA
+    aggregation: !function utils.aggregate_mean
     higher_is_better: true
-  - metric: "MRA:.5:.95:.05"
+  - metric: MCQ_ACC
+    aggregation: !function utils.aggregate_mean
+    higher_is_better: true
+  - metric: ALL_Score_avg
     aggregation: !function utils.aggregate_mean
     higher_is_better: true
 generation_kwargs:

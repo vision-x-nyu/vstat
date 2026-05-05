@@ -69,13 +69,21 @@ cd ../..
 
 For a quick smoke test before the full YouTube run, add `--limit 1` to the downloader command.
 
-The task config reads `data/vstat/vstat_qa_clean.json`; video paths in that QA file are resolved relative to `data/vstat/`. If you keep VSTAT somewhere else, set `VSTAT_QA_PATH=/path/to/vstat_qa_clean.json` and `VSTAT_VIDEO_ROOT=/path/to/vstat`.
+After the download finishes, verify every video referenced by the QA JSON is on disk:
+
+```bash
+python scripts/check_videos.py
+```
+
+This walks `data/vstat/vstat_qa_clean.json`, resolves each `video_path`, and prints any missing or zero-byte files (exit code `1` if anything is wrong, `0` otherwise). Run it before kicking off an eval — without it, a single missing file causes the failing rank to crash inside `doc_to_visual` while the other accelerate ranks block forever on the next NCCL collective.
+
+The task config reads `data/vstat/vstat_qa_clean.json`; video paths in that QA file are resolved relative to `data/vstat/`. If you keep VSTAT somewhere else, set `VSTAT_QA_PATH=/path/to/vstat_qa_clean.json` and `VSTAT_VIDEO_ROOT=/path/to/vstat` (the check script honors the same two variables).
 
 ## Run VISTA
 
 It's recommended to download the dataset into a local `data/` folder.
 
-Task group name:
+Task name:
 
 ```text
 longvid-reasoning-eval_vista

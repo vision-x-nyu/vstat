@@ -216,36 +216,33 @@ def mean_relative_accuracy(pred, target, start, end, interval):
     return accuracy.mean()
 
 
-WORST_CASE_FOR_METRICS = {
-    "accuracy": 0.,
-    "MRA:.5:.95:.05": 0.,
-}
-
-METRICS_FOR_NA = {
-    "MRA:.5:.95:.05": "partial(mean_relative_accuracy, start=.5, end=.95, interval=.05)",
-}
+def _numeric_mra(parsed_prediction, target_value):
+    if parsed_prediction is None:
+        return 0.0
+    try:
+        return float(mean_relative_accuracy(parsed_prediction, target_value, 0.5, 0.95, 0.05))
+    except (OverflowError, TypeError, ValueError, ZeroDivisionError):
+        return 0.0
 
 
 def process_results(doc, results):
+    """Per-doc metrics.
+
+    Numeric docs emit `Numeric_MRA` (MRA at .5:.95:.05). Non-numeric docs (MCQ
+    and open-ended text) emit `MCQ_ACC` (0/1 accuracy). Every doc emits
+    `ALL_Score_avg` set to whichever score applies to it, so the aggregate is
+    the unified per-sample average across the whole benchmark.
+    """
     prediction = str(results[0]).strip() if results else ""
     parsed_prediction = _parse_prediction(doc, prediction)
-    result = {"accuracy": float(_is_correct(doc, parsed_prediction))}
+    is_numeric = (not doc["is_mcq"]) and doc.get("target_value") is not None
 
-    if not doc["is_mcq"] and doc.get("target_value") is not None:
-        for key, value in METRICS_FOR_NA.items():
-            if parsed_prediction is None:
-                result[key] = WORST_CASE_FOR_METRICS[key]
-                continue
-            try:
-                result[key] = float(eval(value)(parsed_prediction, doc["target_value"]))
-            except (OverflowError, TypeError, ValueError, ZeroDivisionError):
-                result[key] = WORST_CASE_FOR_METRICS[key]
+    if is_numeric:
+        score = _numeric_mra(parsed_prediction, doc["target_value"])
+        return {"Numeric_MRA": score, "ALL_Score_avg": score}
 
-    return result
-
-
-def aggregate_accuracy(results):
-    return sum(float(r) for r in results) / len(results) if results else WORST_CASE_FOR_METRICS["accuracy"]
+    score = float(_is_correct(doc, parsed_prediction))
+    return {"MCQ_ACC": score, "ALL_Score_avg": score}
 
 
 def aggregate_mean(results):
