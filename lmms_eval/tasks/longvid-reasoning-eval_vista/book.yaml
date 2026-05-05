@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_vista_book
-process_docs: !function utils.process_book_docs
-include: _default_template_yaml

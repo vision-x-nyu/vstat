@@ -1,16 +1,15 @@
 """Task helpers for VISTA (longvid-reasoning-eval_vista).
 
-The benchmark has no duration subfolders; video_paths in the merged QA JSON
-already point at the absolute on-disk location, so no prefix rewriting is needed
-here. Sub-tasks are a mix of MCQ (3- or 4-way) and numerical (signed or unsigned
-integers); a few sub-tasks (showing_card_most/least) mix MCQ and open-ended text
-within the same sub-task when the ground-truth answer is tied across multiple
-suits. The is_mcq flag is therefore determined per-doc.
+The benchmark has no duration subfolders. Video paths in the QA JSON are
+relative to the local VSTAT folder, and examples are a mix of MCQ,
+numerical, and open-ended text rows, so the scoring mode is determined
+per doc.
 """
 
 import json
 import os
 import re
+from functools import partial
 from pathlib import Path
 
 from datasets import Dataset, DatasetDict
@@ -73,8 +72,9 @@ class VSTATTask(ConfigurableTask):
             payload = json.load(f)
         data = payload["data"] if isinstance(payload, dict) and "data" in payload else payload
         rows = [
-            {"data": [_normalize_doc_for_arrow(doc) for doc in docs]}
-            for _, docs in data.items()
+            _normalize_doc_for_arrow(doc)
+            for docs in data.values()
+            for doc in docs
         ]
         split = self.config.test_split
         self.dataset = DatasetDict({split: Dataset.from_list(rows)})
@@ -85,9 +85,8 @@ class VSTATTask(ConfigurableTask):
 INTEGER_PATTERN = re.compile(r"-?\d+")
 MCQ_LETTER_PATTERN = re.compile(r"\b([A-D])\b")
 
-# Per-sub-task answer instruction appended after the question body.
-# MCQ sub-tasks already embed "(A) ... (B) ..." in the question text so they
-# don't need extra instructions. Numerical sub-tasks get a short prompt.
+# Per-source-task answer instruction appended after the question body.
+# MCQ rows already embed "(A) ... (B) ..." in the question text.
 NUMERICAL_INSTRUCTIONS = {
     "book": "Return only a single integer (positive, negative, or 0).\nAnswer:",
     "packing_order_green": "Return only the final count as a single integer.\nAnswer:",
@@ -101,47 +100,17 @@ NUMERICAL_INSTRUCTIONS = {
 }
 
 
-def _doc_belongs_to_task(doc, source_task):
-    if "source_task" in doc and doc["source_task"] is not None:
-        return doc["source_task"] == source_task
-    video_path = str(doc.get("video_path", "")).replace("\\", "/")
-    return source_task in video_path.split("/")
-
-
-def _get_source_docs(dataset, source_task):
-    if len(dataset) == 1:
-        data = dataset[0]["data"]
-        if isinstance(data, dict):
-            return data[source_task]
-        if isinstance(data, list):
-            return data
-
-    # The HF JSON loader expands merged_adv_qa.json's data dict into one row
-    # per task, so select the row whose video paths contain the source task.
-    matches = []
-    for row in dataset:
-        data = row["data"]
-        if isinstance(data, dict) and source_task in data:
-            matches.append(data[source_task])
-        elif isinstance(data, list) and data and _doc_belongs_to_task(data[0], source_task):
-            matches.append(data)
-
-    assert len(matches) == 1, f"Expected one source row for {source_task}, found {len(matches)}"
-    return matches[0]
-
-
-def _build_task_dataset(dataset, source_task):
-    source_docs = _get_source_docs(dataset, source_task)
+def process_docs(dataset):
     flat_docs = []
-    for doc in source_docs:
+    for doc in dataset:
         question = doc["question"]
         answer = doc["answer"]
-        assert question is not None, f"Missing question for {source_task}"
-        assert answer is not None, f"Missing answer for {source_task}"
+        assert question is not None, f"Missing question for {doc.get('source_task')}"
+        assert answer is not None, f"Missing answer for {doc.get('source_task')}"
         choices = doc.get("choices") or []
         is_mcq = bool(choices)
         flat_doc = {
-            "source_task": source_task,
+            "source_task": str(doc["source_task"]),
             "video_id":    str(doc["video_id"]),
             "video_path":  doc["video_path"],
             "question":    question.strip(),
@@ -165,75 +134,6 @@ def _build_task_dataset(dataset, source_task):
                 flat_doc["answer_text"] = text_answer
         flat_docs.append(flat_doc)
     return Dataset.from_list(flat_docs)
-
-
-def _make_processor(source_task):
-    def process_docs(dataset):
-        return _build_task_dataset(dataset, source_task)
-    return process_docs
-
-
-# --- sub-task processors ---------------------------------------------------
-process_book_docs                         = _make_processor("book")
-process_keyboard_docs                     = _make_processor("keyboard")
-process_shell_game_docs                   = _make_processor("shell_game")
-process_tilt_box_docs                     = _make_processor("tilt_box")
-process_morse_docs                        = _make_processor("morse")
-process_numberpad_docs                    = _make_processor("numberpad")
-process_cup_stacking_1st_docs             = _make_processor("cup_stacking_1st")
-process_cup_stacking_2nd_docs             = _make_processor("cup_stacking_2nd")
-process_cup_stacking_3rd_docs             = _make_processor("cup_stacking_3rd")
-process_cup_stacking_4th_docs             = _make_processor("cup_stacking_4th")
-process_cup_stacking_5th_docs             = _make_processor("cup_stacking_5th")
-process_cup_stacking_6th_docs             = _make_processor("cup_stacking_6th")
-process_cup_stacking_7th_docs             = _make_processor("cup_stacking_7th")
-process_packing_order_green_docs          = _make_processor("packing_order_green")
-process_packing_order_blue_docs           = _make_processor("packing_order_blue")
-process_packing_order_yellow_docs         = _make_processor("packing_order_yellow")
-process_packing_order_chopsticks_docs     = _make_processor("packing_order_chopsticks")
-process_showing_card_count_diamond_docs   = _make_processor("showing_card_count_diamond")
-process_showing_card_count_heart_docs     = _make_processor("showing_card_count_heart")
-process_showing_card_count_club_docs      = _make_processor("showing_card_count_club")
-process_showing_card_count_spade_docs     = _make_processor("showing_card_count_spade")
-process_showing_card_most_docs            = _make_processor("showing_card_most")
-process_showing_card_least_docs           = _make_processor("showing_card_least")
-process_basketball_docs                   = _make_processor("basketball")
-process_bouldering_docs                   = _make_processor("bouldering")
-process_boxing_docs                       = _make_processor("boxing")
-process_carousel_docs                     = _make_processor("carousel")
-process_coffee_docs                       = _make_processor("coffee")
-process_cooking_docs                      = _make_processor("cooking")
-process_cube_docs                         = _make_processor("cube")
-process_cup_race_docs                     = _make_processor("cup_race")
-process_eating_contest_docs               = _make_processor("eating_contest")
-process_graffiti_docs                     = _make_processor("graffiti")
-process_horse_racing_docs                 = _make_processor("horse_racing")
-process_jump_rope_docs                    = _make_processor("jump_rope")
-process_latte_art_docs                    = _make_processor("latte_art")
-process_lego_docs                         = _make_processor("lego")
-process_marching_band_docs                = _make_processor("marching_band")
-process_matryoshka_docs                   = _make_processor("matryoshka")
-process_memory_card_docs                  = _make_processor("memory_card")
-process_n_back_docs                       = _make_processor("n_back")
-process_neuro_tracker_docs                = _make_processor("neuro_tracker")
-process_order_packing_docs                = _make_processor("order_packing")
-process_soccer_docs                       = _make_processor("soccer")
-process_sokoban_docs                      = _make_processor("sokoban")
-process_strand_count_docs                 = _make_processor("strand_count")
-process_street_food_docs                  = _make_processor("street_food")
-process_table_tennis_docs                 = _make_processor("table_tennis")
-process_tennis_docs                       = _make_processor("tennis")
-process_volleyball_docs                   = _make_processor("volleyball")
-process_wii_docs                          = _make_processor("wii")
-process_block_counting_docs               = _make_processor("block_counting")
-process_dice_docs                         = _make_processor("dice")
-process_funnel_ball_docs                  = _make_processor("funnel_ball")
-process_hockey_docs                       = _make_processor("hockey")
-process_make_coffee_docs                  = _make_processor("make_coffee")
-process_shell_game_rotate_docs            = _make_processor("shell_game_rotate")
-process_shuffle_puzzle_docs               = _make_processor("shuffle_puzzle")
-process_tighten_untighten_docs            = _make_processor("tighten_untighten")
-process_tilt_v2_docs                      = _make_processor("tilt_v2")
 
 
 def doc_to_visual(doc):
@@ -303,58 +203,50 @@ def _is_correct(doc, parsed_prediction):
     return parsed_prediction == str(doc["answer_text"]).strip().lower()
 
 
-def _abs_dist_norm(pred, target):
+def abs_dist_norm(pred, target):
+    if target == 0:
+        return 0.0 if pred == target else float("inf")
     return abs(pred - target) / abs(target)
 
 
-def _compute_mra(doc, parsed_prediction):
-    if doc["is_mcq"] or doc.get("target_value") is None:
-        return None
-    gt = doc["target_value"]
-    if parsed_prediction is None:
-        return 0.0
-    if gt == 0:
-        return 1.0 if parsed_prediction == 0 else 0.0
-    
-    # fixed confidence intervals
-    start = 0.5
-    end = 0.95
-    interval = 0.05
+def mean_relative_accuracy(pred, target, start, end, interval):
     num_pts = (end - start) / interval + 2
     conf_intervs = np.linspace(start, end, int(num_pts))
-    accuracy = _abs_dist_norm(parsed_prediction, gt) <= 1 - conf_intervs
+    accuracy = abs_dist_norm(pred, target) <= 1 - conf_intervs
     return accuracy.mean()
 
 
-def _compute_mae(doc, parsed_prediction):
-    if doc["is_mcq"] or doc.get("target_value") is None:
-        return None
-    gt = doc["target_value"]
-    if parsed_prediction is None:
-        return None
-    return abs(parsed_prediction - gt)
+WORST_CASE_FOR_METRICS = {
+    "accuracy": 0.,
+    "MRA:.5:.95:.05": 0.,
+}
+
+METRICS_FOR_NA = {
+    "MRA:.5:.95:.05": "partial(mean_relative_accuracy, start=.5, end=.95, interval=.05)",
+}
 
 
 def process_results(doc, results):
     prediction = str(results[0]).strip() if results else ""
     parsed_prediction = _parse_prediction(doc, prediction)
-    result = {"accuracy": {"is_correct": _is_correct(doc, parsed_prediction)}}
-    mra = _compute_mra(doc, parsed_prediction)
-    if mra is not None:
-        result["mra"] = {"mra_score": mra}
-    mae = _compute_mae(doc, parsed_prediction)
-    if mae is not None:
-        result["mae"] = {"mae_score": mae}
+    result = {"accuracy": float(_is_correct(doc, parsed_prediction))}
+
+    if not doc["is_mcq"] and doc.get("target_value") is not None:
+        for key, value in METRICS_FOR_NA.items():
+            if parsed_prediction is None:
+                result[key] = WORST_CASE_FOR_METRICS[key]
+                continue
+            try:
+                result[key] = float(eval(value)(parsed_prediction, doc["target_value"]))
+            except (OverflowError, TypeError, ValueError, ZeroDivisionError):
+                result[key] = WORST_CASE_FOR_METRICS[key]
+
     return result
 
 
 def aggregate_accuracy(results):
-    return sum(r["is_correct"] for r in results) / len(results) if results else 0.0
+    return sum(float(r) for r in results) / len(results) if results else WORST_CASE_FOR_METRICS["accuracy"]
 
 
-def aggregate_mra(results):
-    return sum(r["mra_score"] for r in results) / len(results) if results else 0.0
-
-
-def aggregate_mae(results):
-    return sum(r["mae_score"] for r in results) / len(results) if results else 0.0
+def aggregate_mean(results):
+    return sum(float(r) for r in results) / len(results) if results else 0.0

@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_vista_shell_game
-process_docs: !function utils.process_shell_game_docs
-include: _default_template_yaml
