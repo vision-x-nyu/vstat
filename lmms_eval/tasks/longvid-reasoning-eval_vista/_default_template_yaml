@@ -1,7 +1,7 @@
 dataset_path: json
 dataset_kwargs:
   data_files:
-    test: /nas2/benchmarks/vpi/real/merged_qa/vpi_qa_redact.json
+    test: vstat_qa_clean.json
 task: longvid-reasoning-eval_vista
 test_split: test
 output_type: generate_until
@@ -26,7 +26,6 @@ generation_kwargs:
 lmms_eval_specific_kwargs:
   default:
     pre_prompt: ""
-    # mcq_post_prompt: "Answer with the option's letter from the given choices directly."
     mcq_post_prompt: "Do not response anything other than a single letter from the given choices!"
     na_post_prompt: "Do not response anything other than a single number!"
 metadata:

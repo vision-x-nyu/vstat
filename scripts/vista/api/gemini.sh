@@ -2,9 +2,7 @@
 
 set -euo pipefail
 
-# : "${GOOGLE_API_KEY:?GOOGLE_API_KEY must be exported before running this script}"
-
-export GOOGLE_API_KEY="AIzaSyBVnyjRzjlglmaYj7ESgq12yt8d96VM-ck"
+: "${GOOGLE_API_KEY:?GOOGLE_API_KEY must be exported before running this script}"
 
 MODEL_VERSION="${MODEL_VERSION:-gemini-3.1-pro-preview}"
 BATCH_SIZE="${BATCH_SIZE:-1}"
@@ -32,9 +30,7 @@ fi
 export LMMS_EVAL_LAUNCHER=python
 
 SUBTASKS=(
-    "longvid-reasoning-eval_ytb"
-    # "longvid-reasoning-eval_recorded"
-    # "longvid-reasoning-eval_ytb_stretch_0p2s"
+    "longvid-reasoning-eval_yista"
 )
 
 for TASK in "${SUBTASKS[@]}"; do
