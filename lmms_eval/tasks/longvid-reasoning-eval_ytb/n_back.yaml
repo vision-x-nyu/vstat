@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_n_back
+process_docs: !function utils.process_n_back_docs
+include: _default_template_yaml

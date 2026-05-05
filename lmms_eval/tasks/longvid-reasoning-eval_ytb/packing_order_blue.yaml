@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_packing_order_blue
+process_docs: !function utils.process_packing_order_blue_docs
+include: _default_template_yaml

@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_cup_stacking_5th
+process_docs: !function utils.process_cup_stacking_5th_docs
+include: _default_template_yaml

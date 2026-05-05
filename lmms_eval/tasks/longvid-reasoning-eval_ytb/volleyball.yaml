@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_volleyball
+process_docs: !function utils.process_volleyball_docs
+include: _default_template_yaml

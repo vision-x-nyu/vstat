@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_dice
+process_docs: !function utils.process_dice_docs
+include: _default_template_yaml

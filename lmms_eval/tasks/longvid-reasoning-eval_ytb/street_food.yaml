@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_street_food
+process_docs: !function utils.process_street_food_docs
+include: _default_template_yaml

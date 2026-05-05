@@ -1,0 +1,3 @@
+task: longvid-reasoning-eval_ytb_keyboard
+process_docs: !function utils.process_keyboard_docs
+include: _default_template_yaml
