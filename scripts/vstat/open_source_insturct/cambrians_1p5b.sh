@@ -1,8 +1,11 @@
-MODEL="lmms-lab/llava-onevision-qwen2-7b-ov"
-TASK_NAME="longvid-reasoning-eval_vista"
+MODEL="nyu-visionx/Cambrian-S-1.5B"
+TASK_NAME="longvid-reasoning-eval_vstat"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
 BATCH_SIZE=1
+
+MIV_TOKEN_LEN="${MIV_TOKEN_LEN:-64}"
+SI_TOKEN_LEN="${SI_TOKEN_LEN:-729}"
 
 PYTHON="${PYTHON:-python}"
 
@@ -17,17 +20,16 @@ cd "$REPO_ROOT"
 TASKS_INCLUDE="${LMMS_EVAL_TASKS_PATH:-$REPO_ROOT/lmms_eval/tasks}"
 
 OPEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=frame_sweep_env.sh
 . "${OPEN_SRC}/frame_sweep_env.sh"
 
 mkdir -p "$OUTPUT_DIR"
 
-MODEL_ARGS="pretrained=${MODEL},conv_template=qwen_1_5,max_frames_num=${MAX_FRAMES}"
-
-export LMMS_EVAL_LAUNCHER="accelerate"
+MODEL_ARGS="pretrained=${MODEL},conv_template=qwen_2,miv_token_len=${MIV_TOKEN_LEN},si_token_len=${SI_TOKEN_LEN},video_max_frames=${MAX_FRAMES}"
 
 $PYTHON -m accelerate.commands.launch --num_processes=${NUM_PROCESSES} --main_process_port=${MAIN_PROCESS_PORT:-29517} -m lmms_eval \
     --include_path "${TASKS_INCLUDE}" \
-    --model llava_onevision \
+    --model cambrians \
     --model_args "${MODEL_ARGS}" \
     --tasks ${TASK_NAME} \
     --batch_size ${BATCH_SIZE} \

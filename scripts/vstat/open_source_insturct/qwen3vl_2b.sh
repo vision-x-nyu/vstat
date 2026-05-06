@@ -1,8 +1,10 @@
-MODEL="lmms-lab/llava-onevision-qwen2-0.5b-ov"
-TASK_NAME="longvid-reasoning-eval_vista"
+MODEL="Qwen/Qwen3-VL-2B-Instruct"
+TASK_NAME="longvid-reasoning-eval_vstat"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
 BATCH_SIZE=1
+MIN_PIXELS=784
+MAX_PIXELS=50176
 
 PYTHON="${PYTHON:-python}"
 
@@ -22,13 +24,14 @@ OPEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 mkdir -p "$OUTPUT_DIR"
 
-MODEL_ARGS="pretrained=${MODEL},conv_template=qwen_1_5,max_frames_num=${MAX_FRAMES}"
+MODEL_ARGS="pretrained=${MODEL},min_pixels=${MIN_PIXELS},max_pixels=${MAX_PIXELS},max_num_frames=${MAX_FRAMES}"
 
 export LMMS_EVAL_LAUNCHER="accelerate"
 
 $PYTHON -m accelerate.commands.launch --num_processes=${NUM_PROCESSES} --main_process_port=${MAIN_PROCESS_PORT:-29517} -m lmms_eval \
     --include_path "${TASKS_INCLUDE}" \
-    --model llava_onevision \
+    --model qwen3_vl \
+    --force_simple \
     --model_args "${MODEL_ARGS}" \
     --tasks ${TASK_NAME} \
     --batch_size ${BATCH_SIZE} \

@@ -1,8 +1,8 @@
-MODEL="Qwen/Qwen3-VL-8B-Instruct"
-TASK_NAME="longvid-reasoning-eval_vista"
+MODEL="Qwen/Qwen3-VL-8B-Thinking"
+TASK_NAME="longvid-reasoning-eval_vstat"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
-BATCH_SIZE=1
+BATCH_SIZE=2
 MIN_PIXELS=784
 MAX_PIXELS=50176
 
@@ -18,13 +18,13 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO_ROOT"
 TASKS_INCLUDE="${LMMS_EVAL_TASKS_PATH:-$REPO_ROOT/lmms_eval/tasks}"
 
-OPEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=frame_sweep_env.sh
+OPEN_SRC="$REPO_ROOT/scripts/vstat/open_source_insturct"
+# shellcheck source=../open_source_insturct/frame_sweep_env.sh
 . "${OPEN_SRC}/frame_sweep_env.sh"
 
 mkdir -p "$OUTPUT_DIR"
 
-MODEL_ARGS="pretrained=${MODEL},min_pixels=${MIN_PIXELS},max_pixels=${MAX_PIXELS},max_num_frames=${MAX_FRAMES}"
+MODEL_ARGS="pretrained=${MODEL},min_pixels=${MIN_PIXELS},max_pixels=${MAX_PIXELS},max_num_frames=${MAX_FRAMES},attn_implementation=flash_attention_2,max_new_tokens=1024"
 
 export LMMS_EVAL_LAUNCHER="accelerate"
 

@@ -1,18 +1,18 @@
 #!/bin/bash
-# Queue every open_source VISTA evaluator at multiple max-frame budgets via task-spooler (ts).
+# Queue every open_source VSTAT evaluator at multiple max-frame budgets via task-spooler (ts).
 #
-# Usage: bash submit_all_vista.sh
+# Usage: bash submit_all_vstat.sh
 # Requires: GNU task-spooler (`ts`) on PATH.
 #
 # Optional env:
-#   VISTA_OPEN_SOURCE_FRAMES — space-separated frame counts (default: 16 32 64 128).
-#   VISTA_MANIFEST — path to the run log TSV (default: $REPO_ROOT/results/vista/open_source/run_manifest.tsv).
+#   VSTAT_OPEN_SOURCE_FRAMES — space-separated frame counts (default: 16 32 64 128).
+#   VSTAT_MANIFEST — path to the run log TSV (default: $REPO_ROOT/results/vstat/open_source/run_manifest.tsv).
 # Launcher env is passed through by each child job.
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
-MANIFEST="${VISTA_MANIFEST:-$REPO_ROOT/results/vista/open_source/run_manifest.tsv}"
-if [[ -n "${VISTA_OPEN_SOURCE_FRAMES:-}" ]]; then
-  read -r -a FRAMES_SWEEP <<<"${VISTA_OPEN_SOURCE_FRAMES}"
+MANIFEST="${VSTAT_MANIFEST:-$REPO_ROOT/results/vstat/open_source/run_manifest.tsv}"
+if [[ -n "${VSTAT_OPEN_SOURCE_FRAMES:-}" ]]; then
+  read -r -a FRAMES_SWEEP <<<"${VSTAT_OPEN_SOURCE_FRAMES}"
 else
   FRAMES_SWEEP=(16 32 64 128)
 fi
@@ -40,11 +40,11 @@ append_manifest() {
   printf '%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$event" "$nf" "$script_base" "$out_dir" >>"$MANIFEST"
 }
 
-echo "Queuing ${#MODEL_SCRIPTS[@]} models x ${#FRAMES_SWEEP[@]} max_frames for VISTA (longvid-reasoning-eval_vista, open_source sweep)..."
+echo "Queuing ${#MODEL_SCRIPTS[@]} models x ${#FRAMES_SWEEP[@]} max_frames for VSTAT (longvid-reasoning-eval_vstat, open_source sweep)..."
 
 for nf in "${FRAMES_SWEEP[@]}"; do
   for s in "${MODEL_SCRIPTS[@]}"; do
-    out="${REPO_ROOT}/results/vista/open_source/max_frames_${nf}/$(basename "$s" .sh)/longvid_reasoning_eval_vista"
+    out="${REPO_ROOT}/results/vstat/open_source/max_frames_${nf}/$(basename "$s" .sh)/longvid_reasoning_eval_vstat"
     append_manifest queued "$nf" "$s" "$out"
     ts bash -c "export MAX_FRAMES=${nf}; bash \"${SCRIPT_DIR}/${s}\""
   done
