@@ -1,6 +1,6 @@
 # VSTAT (Visual STAte Tracking Benchmark)
 
-This repository is a fork of [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) with the **VSTAT** benchmark task: **`longvid-reasoning-eval_vista`**, plus reference shell launchers for open-weight models under [`scripts/vista/`](scripts/vista/).
+This repository is a fork of [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) with the **VSTAT** benchmark task: **`longvid-reasoning-eval_vstat`**, plus reference shell launchers for open-weight models under [`scripts/vstat/`](scripts/vstat/).
 
 ## Install
 
@@ -86,7 +86,7 @@ It's recommended to download the dataset into a local `data/` folder.
 Task name:
 
 ```text
-longvid-reasoning-eval_vista
+longvid-reasoning-eval_vstat
 ```
 
 Example:
@@ -96,21 +96,21 @@ python -m lmms_eval \
   --include_path "$(pwd)/lmms_eval/tasks" \
   --model <model_name> \
   --model_args "<args>" \
-  --tasks longvid-reasoning-eval_vista \
+  --tasks longvid-reasoning-eval_vstat \
   --batch_size 1 \
-  --output_path ./results/vista \
+  --output_path ./results/vstat \
   --log_samples
 ```
 
-## Reference launchers (`scripts/vista/open_source_insturct/`)
+## Reference launchers (`scripts/vstat/open_source_insturct/`)
 
-Each `*.sh` script runs the VSTAT task (**`longvid-reasoning-eval_vista`**) with a fixed Hugging Face `MODEL=`, Accelerate, and model-specific `model_args`. They `cd` to the repository root before invoking `python -m lmms_eval`. Override `PYTHON`, `HF_HOME`, or `HF_HUB_OFFLINE` in your shell if your setup differs.
+Each `*.sh` script runs the VSTAT task (**`longvid-reasoning-eval_vstat`**) with a fixed Hugging Face `MODEL=`, Accelerate, and model-specific `model_args`. They `cd` to the repository root before invoking `python -m lmms_eval`. Override `PYTHON`, `HF_HOME`, or `HF_HUB_OFFLINE` in your shell if your setup differs.
 
 | Variable | Role |
 |----------|------|
 | `MAX_FRAMES` | Video frame budget (default: `32`; see `frame_sweep_env.sh`). |
 | `LMMS_EVAL_TASKS_PATH` | Override for `--include_path` (default: `$REPO_ROOT/lmms_eval/tasks`). |
-| `VISTA_RESULTS_OPEN_SOURCE` | Root directory for `OUTPUT_DIR` (default: `$REPO_ROOT/results/vista/open_source`). |
+| `VSTAT_RESULTS_OPEN_SOURCE` | Root directory for `OUTPUT_DIR` (default: `$REPO_ROOT/results/vstat/open_source`). |
 | `GPUS` | Set in each script header; controls `CUDA_VISIBLE_DEVICES`. |
 
-**Batch queue:** [`submit_all_vista.sh`](scripts/vista/open_source_insturct/submit_all_vista.sh) enqueues all model scripts over a grid of `MAX_FRAMES` values using **task-spooler** (`ts`). Optional env: `VISTA_OPEN_SOURCE_FRAMES`, `VISTA_MANIFEST` (env vars and the script filename keep the legacy `vista` prefix to match what's on disk).
+**Batch queue:** [`submit_all_vstat.sh`](scripts/vstat/open_source_insturct/submit_all_vstat.sh) enqueues all model scripts over a grid of `MAX_FRAMES` values using **task-spooler** (`ts`). Optional env: `VSTAT_OPEN_SOURCE_FRAMES`, `VSTAT_MANIFEST`.

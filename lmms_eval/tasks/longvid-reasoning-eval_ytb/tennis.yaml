@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_ytb_tennis
-process_docs: !function utils.process_tennis_docs
-include: _default_template_yaml

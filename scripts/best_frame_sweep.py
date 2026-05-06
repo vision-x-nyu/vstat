@@ -1,7 +1,7 @@
 """Find the best max_frames setting for each model using per_state_accuracy.py.
 
 Iterates over all (model, max_frames) combinations in the ytb/open_source results
-directory, runs Willis's per_state_accuracy.py on each, and reports the best
+directory, runs the configured per_state_accuracy.py on each, and reports the best
 overall SCORE (mra_with_mcq) for each model along with which max_frames was picked.
 """
 
@@ -12,9 +12,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-RESULTS_ROOT = "/nas2/longvideo_eval/longvid-reasoning-eval/results/ytb/open_source"
-PER_STATE_SCRIPT = "/nas2/willis/longvid-reasoning-eval/scripts/per_state_accuracy.py"
-PYTHON = "/nas2/edwin/miniconda/envs/lmms_eval/bin/python"
+RESULTS_ROOT = os.environ.get("RESULTS_ROOT", "results/ytb/open_source")
+PER_STATE_SCRIPT = os.environ.get(
+    "PER_STATE_SCRIPT",
+    str(Path(__file__).with_name("per_state_accuracy.py")),
+)
+PYTHON = os.environ.get("PYTHON", sys.executable)
 
 
 def find_samples_dir(model_dir: Path) -> str | None:

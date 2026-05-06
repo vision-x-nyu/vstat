@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_ytb_cube
-process_docs: !function utils.process_cube_docs
-include: _default_template_yaml

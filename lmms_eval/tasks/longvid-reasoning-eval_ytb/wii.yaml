@@ -1,3 +1,0 @@
-task: longvid-reasoning-eval_ytb_wii
-process_docs: !function utils.process_wii_docs
-include: _default_template_yaml
