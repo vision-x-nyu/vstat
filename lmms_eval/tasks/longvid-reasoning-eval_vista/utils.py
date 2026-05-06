@@ -9,7 +9,6 @@ per doc.
 import json
 import os
 import re
-from functools import partial
 from pathlib import Path
 
 from datasets import Dataset, DatasetDict

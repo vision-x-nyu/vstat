@@ -18,8 +18,8 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 cd "$REPO_ROOT"
 TASKS_INCLUDE="${LMMS_EVAL_TASKS_PATH:-$REPO_ROOT/lmms_eval/tasks}"
 
-OPEN_SRC="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-# shellcheck source=frame_sweep_env.sh
+OPEN_SRC="$REPO_ROOT/scripts/vista/open_source_insturct"
+# shellcheck source=../open_source_insturct/frame_sweep_env.sh
 . "${OPEN_SRC}/frame_sweep_env.sh"
 
 mkdir -p "$OUTPUT_DIR"

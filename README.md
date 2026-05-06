@@ -1,6 +1,6 @@
 # VISTA (Video Inference & Spatial/Temporal Assessment)
 
-This repository is a fork of [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) with the **VISTA** benchmark task: **`longvid-reasoning-eval_vista`**, plus reference shell launchers for open-weight models under [`scripts/vista/open_source/`](scripts/vista/open_source).
+This repository is a fork of [lmms-eval](https://github.com/EvolvingLMMs-Lab/lmms-eval) with the **VISTA** benchmark task: **`longvid-reasoning-eval_vista`**, plus reference shell launchers for open-weight models under [`scripts/vista/`](scripts/vista/).
 
 ## Install
 
@@ -102,7 +102,7 @@ python -m lmms_eval \
   --log_samples
 ```
 
-## Reference launchers (`scripts/vista/open_source/`)
+## Reference launchers (`scripts/vista/open_source_insturct/`)
 
 Each `*.sh` script runs **`longvid-reasoning-eval_vista`** with a fixed Hugging Face `MODEL=`, Accelerate, and model-specific `model_args`. They `cd` to the repository root before invoking `python -m lmms_eval`. Override `PYTHON`, `HF_HOME`, or `HF_HUB_OFFLINE` in your shell if your setup differs.
 
@@ -113,4 +113,4 @@ Each `*.sh` script runs **`longvid-reasoning-eval_vista`** with a fixed Hugging 
 | `VISTA_RESULTS_OPEN_SOURCE` | Root directory for `OUTPUT_DIR` (default: `$REPO_ROOT/results/vista/open_source`). |
 | `GPUS` | Set in each script header; controls `CUDA_VISIBLE_DEVICES`. |
 
-**Batch queue:** [`submit_all_vista.sh`](scripts/vista/open_source/submit_all_vista.sh) enqueues all model scripts over a grid of `MAX_FRAMES` values using **task-spooler** (`ts`). Optional env: `VISTA_OPEN_SOURCE_FRAMES`, `VISTA_MANIFEST`.
+**Batch queue:** [`submit_all_vista.sh`](scripts/vista/open_source_insturct/submit_all_vista.sh) enqueues all model scripts over a grid of `MAX_FRAMES` values using **task-spooler** (`ts`). Optional env: `VISTA_OPEN_SOURCE_FRAMES`, `VISTA_MANIFEST`.
