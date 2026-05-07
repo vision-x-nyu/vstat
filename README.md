@@ -108,7 +108,7 @@ Each `*.sh` script runs the VSTAT task (**`longvid-reasoning-eval_vstat`**) with
 
 | Variable | Role |
 |----------|------|
-| `MAX_FRAMES` | Video frame budget (default: `32`; see `frame_sweep_env.sh`). |
+| `MAX_FRAMES` | Video frame budget (default: `32`). |
 | `LMMS_EVAL_TASKS_PATH` | Override for `--include_path` (default: `$REPO_ROOT/lmms_eval/tasks`). |
 | `VSTAT_RESULTS_OPEN_SOURCE` | Root directory for `OUTPUT_DIR` (default: `$REPO_ROOT/results/vstat/open_source`). |
 | `GPUS` | Set in each script header; controls `CUDA_VISIBLE_DEVICES`. |
