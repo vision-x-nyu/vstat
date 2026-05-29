@@ -275,6 +275,7 @@ class InternVL3(lmms):
         max_num: int = 12,
         total_max_num: int = 64,
         use_flash_attn: bool = True,
+        low_cpu_mem_usage: bool = False,
         thinking: bool = False,
         system_prompt: Optional[str] = None,
         do_sample: Optional[bool] = None,
@@ -323,14 +324,16 @@ class InternVL3(lmms):
             self._device = torch.device(f"cuda:{accelerator.local_process_index}")
             self.device_map = f"cuda:{accelerator.local_process_index}"
 
-        self._model = AutoModel.from_pretrained(
-            self.path,
-            torch_dtype=torch.bfloat16,
-            low_cpu_mem_usage=True,
-            use_flash_attn=use_flash_attn,
-            trust_remote_code=True,
-            device_map=self.device_map,
-        ).eval()
+        model_kwargs = {
+            "torch_dtype": torch.bfloat16,
+            "low_cpu_mem_usage": False,
+            "use_flash_attn": use_flash_attn,
+            "trust_remote_code": True,
+        }
+        if low_cpu_mem_usage:
+            model_kwargs.update(device_map=self.device_map)
+
+        self._model = AutoModel.from_pretrained(self.path, **model_kwargs).eval()
         self._config = self._model.config
         self._tokenizer = AutoTokenizer.from_pretrained(self.path, trust_remote_code=True, use_fast=False)
 
@@ -354,6 +357,7 @@ class InternVL3(lmms):
             if accelerator.distributed_type == DistributedType.FSDP or accelerator.distributed_type == DistributedType.DEEPSPEED:
                 self._model = accelerator.prepare(self.model)
             else:
+                self._model.to(self._device)
                 self._model = accelerator.prepare_model(self.model, evaluation_mode=True)
             self.accelerator = accelerator
             if self.accelerator.is_local_main_process:

@@ -1,4 +1,6 @@
+import os
 import re
+from pathlib import Path
 from typing import List, Optional, Tuple, Union
 
 import decord
@@ -24,6 +26,31 @@ from lmms_eval.imports import optional_import
 process_vision_info, _has_qwen_vl = optional_import("qwen_vl_utils", "process_vision_info")
 if not _has_qwen_vl:
     eval_logger.warning("Failed to import qwen_vl_utils; Please install it via `pip install qwen-vl-utils`")
+
+
+def _resolve_local_snapshot(pretrained: str) -> str:
+    """Use a fully cached HF snapshot path to avoid per-rank Hub races."""
+    if not pretrained.startswith("Qwen/Qwen3-VL-"):
+        return pretrained
+
+    cache_root = os.environ.get("HUGGINGFACE_HUB_CACHE")
+    if cache_root is None:
+        hf_home = Path(os.environ.get("HF_HOME", "~/.cache/huggingface")).expanduser()
+        cache_root = str(hf_home / "hub")
+
+    model_dir = Path(cache_root) / f"models--{pretrained.replace('/', '--')}"
+    ref_path = model_dir / "refs" / "main"
+    try:
+        revision = ref_path.read_text().strip()
+    except OSError:
+        return pretrained
+
+    snapshot = model_dir / "snapshots" / revision
+    has_weights = (snapshot / "model.safetensors").exists() or (snapshot / "model.safetensors.index.json").exists()
+    if (snapshot / "config.json").exists() and has_weights:
+        eval_logger.info(f"Using local cached snapshot for {pretrained}: {snapshot}")
+        return str(snapshot)
+    return pretrained
 
 
 @register_model("qwen3_vl")
@@ -58,6 +85,7 @@ class Qwen3_VL(lmms):
         super().__init__()
         # Do not use kwargs for now
         assert kwargs == {}, f"Unexpected kwargs: {kwargs}"
+        pretrained = _resolve_local_snapshot(pretrained)
 
         # Validate attention implementation
         valid_attn_implementations = [None, "flash_attention_2", "sdpa", "eager"]

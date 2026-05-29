@@ -48,6 +48,7 @@ class Qwen2_5_VL(lmms):
         system_prompt: Optional[str] = "You are a helpful assistant.",
         interleave_visuals: Optional[bool] = False,
         reasoning_prompt: Optional[str] = None,
+        max_new_tokens: Optional[int] = None,
         **kwargs,
     ) -> None:
         super().__init__()
@@ -83,6 +84,7 @@ class Qwen2_5_VL(lmms):
         self.min_pixels = min_pixels
         self.max_num_frames = max_num_frames
         self.fps = fps
+        self.max_new_tokens = int(max_new_tokens) if max_new_tokens is not None else None
 
         if reasoning_prompt:
             self.reasoning_prompt = reasoning_prompt.replace("\\n", "\n")
@@ -322,6 +324,8 @@ class Qwen2_5_VL(lmms):
             }
             # Update with provided kwargs
             current_gen_kwargs = {**default_gen_kwargs, **gen_kwargs}
+            if self.max_new_tokens is not None:
+                current_gen_kwargs["max_new_tokens"] = self.max_new_tokens
             pad_token_id = self.tokenizer.pad_token_id
 
             if current_gen_kwargs["temperature"] > 0:
@@ -533,6 +537,8 @@ class Qwen2_5_VL(lmms):
                     "num_beams": 1,
                 }
                 current_gen_kwargs = {**default_gen_kwargs, **gen_kwargs}
+                if self.max_new_tokens is not None:
+                    current_gen_kwargs["max_new_tokens"] = self.max_new_tokens
                 pad_token_id = self.tokenizer.pad_token_id
 
                 if current_gen_kwargs["temperature"] > 0:

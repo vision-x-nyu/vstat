@@ -54,6 +54,7 @@ class VITA(lmms):
         conv_template="qwen2p5_instruct",
         use_cache=True,
         max_frames: int = 32,
+        max_new_tokens: int = 1024,
         truncate_context=False,  # whether to truncate the context in generation, set it False for LLaVA-1.6
         **kwargs,
     ) -> None:
@@ -97,6 +98,7 @@ class VITA(lmms):
         self.use_cache = use_cache
         self.truncate_context = truncate_context
         self.max_frames = max_frames
+        self.max_new_tokens = int(max_new_tokens)
         self.frameCat = frameCat
         if self.frameCat:
             from vita.util.data_utils_video_audio_neg_frameCat import dynamic_preprocess
@@ -316,8 +318,7 @@ class VITA(lmms):
                 audios["lengths"] = audio_length.half().cuda()
                 audios["lengths_for_llm"] = audio_for_llm_lens.cuda()
 
-            if "max_new_tokens" not in gen_kwargs:
-                gen_kwargs["max_new_tokens"] = 1024
+            gen_kwargs["max_new_tokens"] = self.max_new_tokens
             if "temperature" not in gen_kwargs:
                 gen_kwargs["temperature"] = 0
             if "top_p" not in gen_kwargs:

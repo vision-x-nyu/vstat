@@ -1,3 +1,4 @@
+import gc
 from typing import List, Optional, Tuple, Union
 
 import torch
@@ -7,10 +8,16 @@ from PIL import Image
 from tqdm import tqdm
 from transformers import AutoProcessor, AutoTokenizer
 
+try:
+    from transformers import BitsAndBytesConfig
+except ImportError:
+    BitsAndBytesConfig = None
+
 from lmms_eval import utils
 from lmms_eval.api.instance import Instance
 from lmms_eval.api.model import lmms
 from lmms_eval.api.registry import register_model
+from lmms_eval.models.model_utils.load_video import read_video
 from lmms_eval.models.model_utils.media_encoder import encode_image_to_data_url
 
 # Import both MoE and non-MoE model classes
@@ -51,26 +58,36 @@ class GLM4V(lmms):
         batch_size: Optional[Union[int, str]] = 1,
         use_cache: bool = True,
         attn_implementation: Optional[str] = None,
+        max_num_frames: int = 32,
+        fps: Optional[float] = None,
         max_new_tokens: int = 8192,
         system_prompt: Optional[str] = None,
+        load_in_8bit: bool = False,
+        load_in_4bit: bool = False,
+        local_pretrained: Optional[str] = None,
+        video_shortest_edge: Optional[int] = None,
+        video_longest_edge: Optional[int] = None,
         **kwargs,
     ) -> None:
         super().__init__()
         assert kwargs == {}, f"Unexpected kwargs: {kwargs}"
 
-        # Determine model class based on pretrained path
-        is_moe_model = "Flash" not in pretrained
+        load_pretrained = local_pretrained or pretrained
+
+        # GLM-4.6V is MoE, while GLM-4.1V-9B-Thinking and GLM-4.6V-Flash use
+        # the dense Glm4vForConditionalGeneration class.
+        is_moe_model = "GLM-4.6V" in pretrained and "Flash" not in pretrained
 
         if is_moe_model:
             if Glm4vMoeForConditionalGeneration is None:
                 raise ImportError("Glm4vMoeForConditionalGeneration not available. " "Please install transformers>=5.0.0: pip install transformers>=5.0.0")
             model_class = Glm4vMoeForConditionalGeneration
-            eval_logger.info(f"Loading GLM-4.6V MoE model from {pretrained}")
+            eval_logger.info(f"Loading GLM4V MoE model from {pretrained}")
         else:
             if Glm4vForConditionalGeneration is None:
                 raise ImportError("Glm4vForConditionalGeneration not available. " "Please install transformers>=5.0.0: pip install transformers>=5.0.0")
             model_class = Glm4vForConditionalGeneration
-            eval_logger.info(f"Loading GLM-4.6V Flash model from {pretrained}")
+            eval_logger.info(f"Loading GLM4V dense model from {pretrained}")
 
         # Validate attention implementation
         valid_attn_implementations = [None, "flash_attention_2", "sdpa", "eager"]
@@ -92,15 +109,42 @@ class GLM4V(lmms):
             "torch_dtype": torch.bfloat16,
         }
 
+        if load_in_8bit and load_in_4bit:
+            raise ValueError("Only one of load_in_8bit or load_in_4bit can be enabled")
+        if load_in_8bit or load_in_4bit:
+            if BitsAndBytesConfig is None:
+                raise ImportError("BitsAndBytesConfig is not available. Install bitsandbytes to use quantized GLM loading.")
+            quant_kwargs = {"load_in_8bit": load_in_8bit, "load_in_4bit": load_in_4bit}
+            if load_in_4bit:
+                quant_kwargs.update(
+                    {
+                        "bnb_4bit_compute_dtype": torch.bfloat16,
+                        "bnb_4bit_quant_type": "nf4",
+                        "bnb_4bit_use_double_quant": True,
+                    }
+                )
+            model_kwargs["quantization_config"] = BitsAndBytesConfig(**quant_kwargs)
+
         # Add attention implementation if specified
         if attn_implementation is not None:
             model_kwargs["attn_implementation"] = attn_implementation
 
-        self._model = model_class.from_pretrained(pretrained, **model_kwargs).eval()
-        self.processor = AutoProcessor.from_pretrained(pretrained)
-        self._tokenizer = AutoTokenizer.from_pretrained(pretrained)
+        self._model = model_class.from_pretrained(load_pretrained, **model_kwargs).eval()
+        self.processor = AutoProcessor.from_pretrained(load_pretrained)
+        self._tokenizer = AutoTokenizer.from_pretrained(load_pretrained)
         self.system_prompt = system_prompt
+        self.max_num_frames = int(max_num_frames)
+        self.fps = fps
         self.max_new_tokens = max_new_tokens
+        self.video_size = None
+        if video_shortest_edge is not None or video_longest_edge is not None:
+            default_size = dict(self.processor.video_processor.size)
+            if video_shortest_edge is not None:
+                default_size["shortest_edge"] = int(video_shortest_edge)
+            if video_longest_edge is not None:
+                default_size["longest_edge"] = int(video_longest_edge)
+            self.video_size = default_size
+            eval_logger.info(f"Using GLM4V video processor size override: {self.video_size}")
 
         self._config = self.model.config
         self._max_length = 128000  # GLM-4.6V supports 128K context
@@ -207,6 +251,9 @@ class GLM4V(lmms):
                 until = [until]
             elif not isinstance(until, list):
                 raise ValueError(f"Expected `gen_kwargs['until']` to be of type Union[str, list], but got {type(until)}")
+            # Thinking checkpoints commonly emit "</think>\n\n<answer>"; the
+            # task scorer should see the final answer, not only the rationale.
+            until = [item for item in until if item != "\n\n"]
 
             if isinstance(contexts, tuple):
                 contexts = list(contexts)
@@ -234,8 +281,15 @@ class GLM4V(lmms):
                                     "url": self._image_to_base64(visual),
                                 }
                             )
+                        elif isinstance(visual, str) and visual.endswith((".mp4", ".avi", ".mov", ".mkv", ".webm")):
+                            video = read_video(visual, num_frm=self.max_num_frames, fps=self.fps)
+                            content.append(
+                                {
+                                    "type": "video",
+                                    "video": video,
+                                }
+                            )
                         elif isinstance(visual, str):
-                            # URL or file path
                             content.append(
                                 {
                                     "type": "image",
@@ -248,17 +302,28 @@ class GLM4V(lmms):
                 batched_messages.append(message)
 
             # Process inputs using chat template
+            processor_kwargs = {
+                "padding": True,
+                "videos_kwargs": {
+                    "do_sample_frames": False,
+                    "return_metadata": True,
+                },
+            }
+            if self.video_size is not None:
+                processor_kwargs["videos_kwargs"]["size"] = self.video_size
+
             inputs = self.processor.apply_chat_template(
                 batched_messages,
                 tokenize=True,
                 add_generation_prompt=True,
                 return_dict=True,
                 return_tensors="pt",
-                padding=True,
+                processor_kwargs=processor_kwargs,
             )
 
             # Remove token_type_ids if present (GLM-4.6V specific)
             inputs.pop("token_type_ids", None)
+            inputs.pop("video_metadata", None)
 
             if self.device_map == "auto":
                 inputs = inputs.to("cuda")
@@ -273,6 +338,7 @@ class GLM4V(lmms):
                 "num_beams": 1,
             }
             current_gen_kwargs = {**default_gen_kwargs, **gen_kwargs}
+            current_gen_kwargs["max_new_tokens"] = self.max_new_tokens
             pad_token_id = self.tokenizer.pad_token_id
 
             if current_gen_kwargs["temperature"] > 0:
@@ -312,6 +378,11 @@ class GLM4V(lmms):
                 res.append(ans)
                 self.cache_hook.add_partial("generate_until", (context, gen_kwargs), ans)
                 pbar.update(1)
+            del inputs, cont, generated_ids_trimmed, answers
+            del batched_messages, visual_list, current_gen_kwargs
+            gc.collect()
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
 
         res = re_ords.get_original(res)
         pbar.close()
