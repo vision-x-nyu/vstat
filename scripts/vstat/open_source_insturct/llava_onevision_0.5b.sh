@@ -1,5 +1,5 @@
 MODEL="lmms-lab/llava-onevision-qwen2-0.5b-ov"
-TASK_NAME="longvid-reasoning-eval_vstat"
+TASK_NAME="vstat"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
 BATCH_SIZE=1

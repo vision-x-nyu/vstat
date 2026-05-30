@@ -30,12 +30,7 @@ ipython_config.py
 
 # Environment and secrets
 .env
-*.json
-*.jsonl
-*.md
 
-eval_markdown/
-vstat_hf_cache/
 # Caches and temp
 **/.cache
 lm_cache
@@ -51,8 +46,6 @@ wandb/
 zk.log
 span.log
 
-*.tsv
-
 # Data and models (large / local-only)
 data/
 pretrained/
@@ -60,25 +53,13 @@ ckpt
 submissions/
 remote_code/*
 
-# External repos cloned locally
-LLaVA/
-InternVL/
-llava-video/
-Video-MME/
-VATEX/
-
-# Task-specific generated files
-lmms_eval/tasks/hallusion_bench/hallusion_output_vs_model.json
-lmms_eval/tasks/hallusion_bench/hallusion_output_vd_model.json
+# Results (user-generated, not tracked)
+results/
 
 # Fonts
 SimSun.ttf
 
-# Scripts and workspace (local-only)
-workspace/
-docs/plans/
-
-# Agent / AI assistant memory files (user-local, not tracked), we encourage users to design their own agents, and can use our provided skills as reference.
+# Agent / AI assistant memory files
 AGENTS.md
 CLAUDE.md
 .claude/*
@@ -87,5 +68,3 @@ CLAUDE.md
 .opencode
 .ignored/
 .worktrees/
-
-*.txt

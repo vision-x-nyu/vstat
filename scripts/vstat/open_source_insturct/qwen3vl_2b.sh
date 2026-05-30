@@ -1,5 +1,5 @@
 MODEL="Qwen/Qwen3-VL-2B-Instruct"
-TASK_NAME="longvid-reasoning-eval_vstat"
+TASK_NAME="vstat"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
 BATCH_SIZE=1

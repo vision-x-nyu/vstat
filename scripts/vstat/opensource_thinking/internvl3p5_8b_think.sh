@@ -1,7 +1,7 @@
 MODEL="OpenGVLab/InternVL3_5-8B"
 # InternVL3.5-8B with Thinking mode enabled (R1_SYSTEM_PROMPT, sampling at T=0.6).
 # Reference: https://huggingface.co/OpenGVLab/InternVL3_5-8B
-TASK_NAME="longvid-reasoning-eval_vstat"
+TASK_NAME="vstat"
 GPUS="0,1,2,3,4,5,6,7"
 NUM_PROCESSES=8
 BATCH_SIZE=1

@@ -3,7 +3,7 @@ class: !function utils.VSTATTask
 dataset_kwargs:
   data_files:
     test: data/vstat/vstat_qa_clean.json
-task: longvid-reasoning-eval_vstat
+task: vstat
 test_split: test
 output_type: generate_until
 doc_to_visual: !function utils.doc_to_visual

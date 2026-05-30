@@ -40,11 +40,11 @@ append_manifest() {
   printf '%s\t%s\t%s\t%s\t%s\n' "$(date -Iseconds)" "$event" "$nf" "$script_base" "$out_dir" >>"$MANIFEST"
 }
 
-echo "Queuing ${#MODEL_SCRIPTS[@]} models x ${#FRAMES_SWEEP[@]} max_frames for VSTAT (longvid-reasoning-eval_vstat, open_source sweep)..."
+echo "Queuing ${#MODEL_SCRIPTS[@]} models x ${#FRAMES_SWEEP[@]} max_frames for VSTAT (vstat, open_source sweep)..."
 
 for nf in "${FRAMES_SWEEP[@]}"; do
   for s in "${MODEL_SCRIPTS[@]}"; do
-    out="${REPO_ROOT}/results/vstat/open_source/max_frames_${nf}/$(basename "$s" .sh)/longvid_reasoning_eval_vstat"
+    out="${REPO_ROOT}/results/vstat/open_source/max_frames_${nf}/$(basename "$s" .sh)/vstat"
     append_manifest queued "$nf" "$s" "$out"
     ts bash -c "export MAX_FRAMES=${nf}; bash \"${SCRIPT_DIR}/${s}\""
   done

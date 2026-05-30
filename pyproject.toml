@@ -11,7 +11,7 @@ version = "0.7.1"
 authors = [
     { name = "LMMMs-Lab Evaluation Team", email = "lmms-lab@outlook.com" },
 ]
-description = "A framework for evaluating large multi-modality language models"
+description = "VSTAT evaluation framework, built on lmms-eval"
 readme = "README.md"
 license = "MIT"
 license-files = ["LICENSE"]
@@ -197,8 +197,8 @@ lmms-eval-mcp = "lmms_eval.mcp:main"
 lmms-eval-ui = "lmms_eval.tui.cli:main"
 
 [project.urls]
-Homepage = "https://lmms-lab.github.io"
-Repository = "https://github.com/EvolvingLMMs-Lab/lmms-eval"
+Homepage = "https://vision-x-nyu.github.io/VSTAT"
+Repository = "https://github.com/vision-x-nyu/VSTAT"
 
 [dependency-groups]
 dev = [

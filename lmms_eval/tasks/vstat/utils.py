@@ -1,4 +1,4 @@
-"""Task helpers for VSTAT (longvid-reasoning-eval_vstat).
+"""Task helpers for VSTAT (vstat).
 
 The benchmark has no duration subfolders. Video paths in the QA JSON are
 relative to the local VSTAT folder, and examples are a mix of MCQ,

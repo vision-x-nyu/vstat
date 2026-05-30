@@ -29,8 +29,12 @@ fi
 
 export LMMS_EVAL_LAUNCHER=python
 
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$REPO_ROOT"
+TASKS_INCLUDE="${LMMS_EVAL_TASKS_PATH:-$REPO_ROOT/lmms_eval/tasks}"
+
 SUBTASKS=(
-    "longvid-reasoning-eval_yista"
+    "vstat"
 )
 
 for TASK in "${SUBTASKS[@]}"; do
@@ -52,6 +56,7 @@ for TASK in "${SUBTASKS[@]}"; do
         echo "=========================================="
 
         "$PYTHON" -m lmms_eval \
+            --include_path "${TASKS_INCLUDE}" \
             --model gemini_api \
             --model_args "${MODEL_ARGS}" \
             --tasks "${TASK}" \

@@ -1,5 +1,5 @@
 MODEL="XiaomiMiMo/MiMo-VL-7B-SFT-2508"
-TASK_NAME="longvid-reasoning-eval_vstat"
+TASK_NAME="vstat"
 GPUS="${GPUS:-0,1,2,3,4,5,6,7}"
 NUM_PROCESSES="${NUM_PROCESSES:-8}"
 BATCH_SIZE="${BATCH_SIZE:-1}"

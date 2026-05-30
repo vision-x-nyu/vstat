@@ -1,6 +1,6 @@
 """Find the best max_frames setting for each model using per_state_accuracy.py.
 
-Iterates over all (model, max_frames) combinations in the ytb/open_source results
+Iterates over all (model, max_frames) combinations in the VSTAT open_source results
 directory, runs the configured per_state_accuracy.py on each, and reports the best
 overall SCORE (mra_with_mcq) for each model along with which max_frames was picked.
 """
@@ -12,7 +12,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-RESULTS_ROOT = os.environ.get("RESULTS_ROOT", "results/ytb/open_source")
+RESULTS_ROOT = os.environ.get("RESULTS_ROOT", "results/vstat/open_source")
 PER_STATE_SCRIPT = os.environ.get(
     "PER_STATE_SCRIPT",
     str(Path(__file__).with_name("per_state_accuracy.py")),
