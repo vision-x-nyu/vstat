@@ -1,13 +1,9 @@
-<p align="center">
-  <img src="assets/teaser.gif" alt="VSTAT teaser" width="100%">
-</p>
-
 <h1 align="center">
-  <img src="assets/logo.png" alt="" height="32" valign="middle">&nbsp;VSTAT
+  <img src="assets/logo.png" alt="" height="32" valign="middle">&nbsp;VSTAT: Benchmarking Visual State Tracking in Multimodal Video Understanding
 </h1>
 
 <p align="center">
-  <b>Benchmarking Visual State Tracking in Multimodal Video Understanding</b>
+  <img src="assets/teaser.gif" alt="VSTAT teaser" width="100%">
 </p>
 
 <p align="center">
