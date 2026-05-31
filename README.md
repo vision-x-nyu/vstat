@@ -1,4 +1,4 @@
-<h1 align="center">
+<h1>
   <img src="assets/logo.png" alt="" height="32" valign="middle">&nbsp;VSTAT: Benchmarking Visual State Tracking in Multimodal Video Understanding
 </h1>
 
@@ -10,12 +10,28 @@
   <a href="https://arxiv.org/abs/XXXX.XXXXX"><img src="https://img.shields.io/badge/arXiv-Paper-red"></a>
   <a href="https://vision-x-nyu.github.io/VSTAT"><img src="https://img.shields.io/badge/Project-Website-blue"></a>
   <a href="https://huggingface.co/collections/nyu-visionx/vstat"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-Dataset-yellow"></a>
-  <a href="https://github.com/vision-x-nyu/VSTAT"><img src="https://img.shields.io/badge/GitHub-Code-black"></a>
-  <a href="#license"><img src="https://img.shields.io/badge/License-Apache%202.0-green.svg"></a>
 </p>
 
 <p align="center">
-  <em>Can Multimodal LLMs track, reason about, and recall visual state changes over long videos?</em>
+  <a href="https://sihyun.me/">Sihyun Yu</a><sup>1,2†*</sup>,
+  <a href="https://willisma.github.io/">Nanye Ma</a><sup>1†*</sup>,
+  <a href="https://pinzhihuang.github.io/">Pinzhi Huang</a><sup>1†*</sup>,
+  Hyunseok Lee<sup>2*</sup>,
+  Shusheng Yang<sup>1</sup>,
+  June Suk Choi<sup>2</sup>,
+  Ellis Brown<sup>1</sup>,<br>
+  Oscar Michel<sup>1</sup>,
+  Boyang Zheng<sup>1</sup>,
+  Jinwoo Shin<sup>2</sup>,
+  <a href="https://www.sainingxie.com/">Saining Xie</a><sup>1</sup>
+</p>
+
+<p align="center">
+  <sup>1</sup>New York University&nbsp;&nbsp;&nbsp;<sup>2</sup>KAIST
+</p>
+
+<p align="center">
+  <sup>†</sup> Project lead.&nbsp;&nbsp;&nbsp;<sup>*</sup> Equal technical contribution.
 </p>
 
 ---
