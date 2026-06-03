@@ -1,0 +1,70 @@
+# Python
+*.pyc
+__pycache__
+*.egg-info
+*.isorted
+
+# Virtual environments
+env
+venv
+.venv
+
+# Build artifacts
+build
+dist
+!lmms_eval/tui/web/dist
+
+# Package manager
+node_modules/
+uv.lock
+
+# IDE / Editor
+.idea
+.vscode/
+.ipynb_checkpoints
+profile_default/
+ipython_config.py
+
+# OS
+.DS_Store
+
+# Environment and secrets
+.env
+
+# Caches and temp
+**/.cache
+lm_cache
+cache_dir
+temp/
+outputs/
+output/
+
+# Logs
+logs/
+*.log
+wandb/
+zk.log
+span.log
+
+# Data and models (large / local-only)
+data/
+pretrained/
+ckpt
+submissions/
+remote_code/*
+
+# Results (user-generated, not tracked)
+results/
+
+# Fonts
+SimSun.ttf
+
+# Agent / AI assistant memory files
+AGENTS.md
+CLAUDE.md
+.claude/*
+!.claude-plugin/
+.opencode/
+.opencode
+.ignored/
+.worktrees/

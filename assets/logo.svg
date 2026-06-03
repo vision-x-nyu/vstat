@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <g fill="none" stroke="#111214" stroke-width="3">
+    <g opacity="1"><g transform="rotate(-16 32 20)"><ellipse cx="32" cy="20" rx="14" ry="11"/></g></g>
+    <g opacity="0.6"><g transform="rotate(-16 32 31)"><ellipse cx="32" cy="31" rx="14" ry="11"/></g></g>
+    <g opacity="0.3"><g transform="rotate(-16 32 42)"><ellipse cx="32" cy="42" rx="14" ry="11"/></g></g>
+  </g>
+</svg>
