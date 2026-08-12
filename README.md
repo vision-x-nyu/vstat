@@ -101,7 +101,9 @@ bash scripts/redact.sh
 cd ../..
 ```
 
-Ensure every video referenced in `vstat_qa_clean.json` exists under `data/vstat/` before evaluation. Missing files can cause silent multi-rank hangs during distributed runs.
+If some videos are missing, email pinzhihuang23@gmail.com to request them.
+
+Ensure every video referenced in `vstat_qa_clean.json` exists under `data/vstat/` before evaluation. Missing files can cause silent multi-rank hangs during distributed runs. 
 
 **Custom paths:** If your data lives elsewhere, set:
 ```bash
