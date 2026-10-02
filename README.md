@@ -42,6 +42,7 @@
 
 ## Release
 
+- `2026-10` Prepared clips are available through [private Google Drive access](https://drive.google.com/drive/folders/1IAUiBXHhqCP_jXM9wZe42dEbIdd-pWoZ), with a [download and verification script](scripts/download_drive.py).
 - `2026-05` 🚀 We release VSTAT benchmark and evaluation code.
 
 ## Contents
@@ -81,7 +82,19 @@ pip install -e ".[video]"
 
 ## Benchmark
 
-VSTAT is hosted on HuggingFace: [`nyu-visionx/VSTAT`](https://huggingface.co/collections/nyu-visionx/vstat).
+VSTAT is hosted on Hugging Face: [`nyu-visionx/vstat`](https://huggingface.co/datasets/nyu-visionx/vstat).
+
+**Prepared clips:** If you have trouble downloading YouTube videos, you can [request access to all 834 prepared clips here](https://drive.google.com/drive/folders/1IAUiBXHhqCP_jXM9wZe42dEbIdd-pWoZ). Sign in with your Google account and click **Request access**. The clips cover all **1,500 evaluation questions** and are already trimmed and redacted.
+
+After approval and [one-time Google Drive setup](docs/google_drive.md#request-access-and-authorize-once), download and verify the complete dataset:
+
+```bash
+python scripts/download_drive.py --output data/vstat
+```
+
+See [download instructions and the agent workflow](docs/google_drive.md) for access checks, JSON status output, retries, verification, and evaluation. Do not rerun the YouTube download or redaction scripts on the prepared clips.
+
+### Download from the original sources
 
 Download it into the local `data/` folder:
 
@@ -101,7 +114,7 @@ bash scripts/redact.sh
 cd ../..
 ```
 
-If some videos are missing, email pinzhihuang23@gmail.com to request them.
+If a YouTube source is unavailable, use the [private prepared clips](https://drive.google.com/drive/folders/1IAUiBXHhqCP_jXM9wZe42dEbIdd-pWoZ). Access is managed by pinzhihuang23@gmail.com.
 
 Ensure every video referenced in `vstat_qa_clean.json` exists under `data/vstat/` before evaluation. Missing files can cause silent multi-rank hangs during distributed runs. 
 
