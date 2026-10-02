@@ -20,7 +20,7 @@ cd vstat
 python scripts/download_drive.py --output data/vstat
 ```
 
-The same script is available in the Hugging Face dataset's `scripts/` directory. From that dataset directory, use `--output .` to keep the existing layout.
+If you already have a Hugging Face dataset checkout, pass its directory to `--output`. The script above can populate that existing directory with the prepared release.
 
 The downloader checks access, copies the release with parallel transfers and retries, reuses completed matching files on a rerun, and validates every manifest file's size and SHA-256. It verifies the pinned QA file and coverage of all 834 clips / 1,500 questions. It does not delete extra local files.
 
